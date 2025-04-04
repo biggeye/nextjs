@@ -9,9 +9,10 @@ import { ChevronDown, ChevronUp } from "lucide-react"
 interface ReviewSubmitStepProps {
   data: any
   updateData: (data: any) => void
+  onBack: () => void
 }
 
-export function ReviewSubmitStep({ data = {}, updateData }: ReviewSubmitStepProps) {
+export function ReviewSubmitStep({ data = {}, updateData, onBack }: ReviewSubmitStepProps) {
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     socialFamilyHistory: true,
     employmentEducation: false,

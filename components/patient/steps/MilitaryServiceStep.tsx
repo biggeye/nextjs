@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
+import { Button } from "@/components/ui/button"
 
 interface MilitaryService {
   servedInMilitary: string
@@ -44,9 +45,11 @@ interface MilitaryService {
 interface MilitaryServiceStepProps {
   data: Partial<MilitaryService>
   updateData: (data: Partial<MilitaryService>) => void
+  onNext?: () => void
+  onBack?: () => void
 }
 
-export function MilitaryServiceStep({ data = {}, updateData }: MilitaryServiceStepProps) {
+export function MilitaryServiceStep({ data = {}, updateData, onNext, onBack }: MilitaryServiceStepProps) {
   // Initialize with default values to prevent undefined errors
   const defaultData: MilitaryService = {
     servedInMilitary: "",
@@ -237,7 +240,12 @@ export function MilitaryServiceStep({ data = {}, updateData }: MilitaryServiceSt
       {formState.servedInMilitary === "no" && (
         <div className="p-4 bg-gray-50 rounded-md">
           <p>No military service history to report. You can proceed to the next section.</p>
-        </div>
+        
+              <div className="flex justify-between">
+              {onBack && <Button variant="outline" onClick={onBack}>Back</Button>}
+              {onNext && <Button onClick={onNext}>Next</Button>}
+            </div>
+            </div>
       )}
     </div>
   )

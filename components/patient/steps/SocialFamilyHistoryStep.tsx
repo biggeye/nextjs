@@ -44,9 +44,11 @@ interface SocialFamilyHistory {
 interface SocialFamilyHistoryStepProps {
   data: Partial<SocialFamilyHistory>
   updateData: (data: Partial<SocialFamilyHistory>) => void
+  onBack?: () => void
+  onNext?: () => void
 }
 
-export function SocialFamilyHistoryStep({ data = {}, updateData }: SocialFamilyHistoryStepProps) {
+export function SocialFamilyHistoryStep({ data = {}, updateData, onBack, onNext }: SocialFamilyHistoryStepProps) {
   // Initialize with default values to prevent undefined errors
   const defaultData: SocialFamilyHistory = {
     livingStatus: "",
@@ -857,6 +859,26 @@ export function SocialFamilyHistoryStep({ data = {}, updateData }: SocialFamilyH
           placeholder="Please share any additional information that you feel is important for us to know..."
           rows={4}
         />
+      </div>
+      
+      <div className="flex justify-end space-x-4">
+        {onBack && (
+          <Button
+            variant="outline"
+            onClick={onBack}
+            className="bg-gray-50 text-gray-700 hover:bg-gray-100"
+          >
+            Back
+          </Button>
+        )}
+        {onNext && (
+          <Button
+            onClick={onNext}
+            className="bg-primary text-white hover:bg-primary/90"
+          >
+            Next
+          </Button>
+        )}
       </div>
     </div>
   )

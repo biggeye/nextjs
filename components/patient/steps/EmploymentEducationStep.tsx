@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
+import { Button } from "@/components/ui/button"
 
 interface EmploymentEducation {
   employmentStatus: string
@@ -43,9 +44,11 @@ interface EmploymentEducation {
 interface EmploymentEducationStepProps {
   data: Partial<EmploymentEducation>
   updateData: (data: Partial<EmploymentEducation>) => void
+  onBack?: () => void
+  onNext?: () => void
 }
 
-export function EmploymentEducationStep({ data = {}, updateData }: EmploymentEducationStepProps) {
+export function EmploymentEducationStep({ data = {}, updateData, onBack, onNext }: EmploymentEducationStepProps) {
   // Initialize with default values to prevent undefined errors
   const defaultData: EmploymentEducation = {
     employmentStatus: "",
@@ -573,6 +576,26 @@ export function EmploymentEducationStep({ data = {}, updateData }: EmploymentEdu
           placeholder="Please share any additional information that you feel is important for us to know..."
           rows={4}
         />
+      </div>
+
+      <div className="flex justify-end space-x-4">
+        {onBack && (
+          <Button
+            variant="outline"
+            onClick={onBack}
+            className="bg-gray-50 text-gray-700 hover:bg-gray-100"
+          >
+            Back
+          </Button>
+        )}
+        {onNext && (
+          <Button
+            onClick={onNext}
+            className="bg-primary text-white hover:bg-primary/90"
+          >
+            Next
+          </Button>
+        )}
       </div>
     </div>
   )

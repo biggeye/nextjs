@@ -1,7 +1,7 @@
 import { Suspense } from "react"
-import PatientPreAssessment from "@/components/patient/PatientPreAssessment"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
+import { PatientIntakeFlow } from "@/components/patient/PatientIntakeFlow"
 
 interface PatientAssessmentPageProps {
   params: {
@@ -31,9 +31,8 @@ export default function PatientAssessmentPage({ params }: PatientAssessmentPageP
   return (
     <div className="min-h-screen bg-gray-50">
       <Suspense fallback={<AssessmentLoading />}>
-        <PatientPreAssessment
+        <PatientIntakeFlow
           patientId="patient_123" // This would typically come from authentication
-          assessmentId={params.id}
         />
       </Suspense>
     </div>

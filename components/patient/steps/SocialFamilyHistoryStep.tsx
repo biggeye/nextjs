@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
-
+import { Button } from "@/components/ui/button"
 interface SocialFamilyHistory {
   livingStatus: string
   unstableDuration: string

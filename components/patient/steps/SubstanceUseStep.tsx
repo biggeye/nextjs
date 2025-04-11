@@ -1,805 +1,421 @@
-// components/patient/steps/SubstanceUseStep.tsx
-"use client"
+// c:\source\biggeye\repos\nextjs\components\patient\steps\SubstanceUseStep.tsx
+import React from 'react';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button'; // Added import for Button
+import { PatientData } from '../PatientIntakeFlow'; 
 
-import type React from "react"
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Textarea } from "@/components/ui/textarea"
-import { Input } from "@/components/ui/input"
+// --- Types defined inline for now, consider moving to /types/steps.ts ---
+export interface SubstanceDetail {
+  substance: string; // Name of the substance (e.g., 'Alcohol', 'Marijuana')
+  ageFirstUse: string;
+  lastUseDate: string;
+  frequency: string; // e.g., 'Daily', 'Weekly', 'Monthly', 'Less than monthly'
+  method: string; // e.g., 'Oral', 'Smoked', 'Injected', 'Snorted'
+  amount: string; // Quantity per use occasion
+  longestAbstinence: string; // Duration
+  previousTreatment: 'Yes' | 'No' | '';
+  treatmentType?: string; // Optional: details if previousTreatment is 'Yes'
+}
+
+export interface SubstanceUseData {
+  everUsed: 'Yes' | 'No' | '';
+  usedSubstancesPastYear: string[]; // Array of substance names
+  substancesDetails: SubstanceDetail[]; // Details for each substance checked above
+  everReceivedTreatment: 'Yes' | 'No' | '';
+  treatmentHistory?: {
+    type: string; // e.g., 'Inpatient', 'Outpatient', 'Detox', 'Sober Living'
+    facilityName: string;
+    dates: string; // e.g., 'MM/YYYY - MM/YYYY' or 'MM/YYYY'
+    completed: 'Yes' | 'No' | 'Ongoing' | '';
+  }[];
+  readinessToChange: '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | ''; // Scale 1-10
+  additionalComments?: string;
+}
 
 interface SubstanceUseStepProps {
-  data: any
-  updateData: (data: any) => void
-  onNext?: () => void
-  onBack?: () => void
+  substance: SubstanceUseData;
+  updateData: (newData: Partial<PatientData>) => void;
+  onNext?: () => void; // Added navigation prop
+  onBack?: () => void; // Added navigation prop
 }
+// --- End Types ---
 
-export function SubstanceUseStep({ data, updateData, onNext, onBack }: SubstanceUseStepProps) {
-  const substance = data.substance || {}
-  
-  const [showAlcoholQuestions, setShowAlcoholQuestions] = useState(false)
-  const [showCannabisQuestions, setShowCannabisQuestions] = useState(false)
-  const [showOpioidQuestions, setShowOpioidQuestions] = useState(false)
-  const [showStimulantQuestions, setShowStimulantQuestions] = useState(false)
-  const [showOtherDrugQuestions, setShowOtherDrugQuestions] = useState(false)
-  const [showTreatmentQuestions, setShowTreatmentQuestions] = useState(false)
-  const [showWithdrawalQuestions, setShowWithdrawalQuestions] = useState(false)
-  
-  useEffect(() => {
-    setShowAlcoholQuestions(substance.alcoholUse === 'yes')
-    setShowCannabisQuestions(substance.cannabisUse === 'yes')
-    setShowOpioidQuestions(substance.opioidUse === 'yes')
-    setShowStimulantQuestions(substance.stimulantUse === 'yes')
-    setShowOtherDrugQuestions(substance.otherDrugUse === 'yes')
-    setShowTreatmentQuestions(substance.substanceTreatment === 'yes')
-    setShowWithdrawalQuestions(substance.withdrawalSymptoms === 'yes')
-  }, [substance])
+// TODO: Move substanceOptions to a shared location like /lib/options.ts
+const substanceOptions = [
+  { value: 'Alcohol', label: 'Alcohol' },
+  { value: 'Cannabis', label: 'Cannabis (Marijuana, THC)' },
+  { value: 'Cocaine', label: 'Cocaine / Crack' },
+  { value: 'Stimulants', label: 'Stimulants (e.g., Adderall, Ritalin, Meth)' },
+  { value: 'Benzodiazepines', label: 'Benzodiazepines (e.g., Xanax, Valium, Klonopin)' },
+  { value: 'Opioids', label: 'Opioids (e.g., Heroin, Fentanyl, Oxycodone, Vicodin)' },
+  { value: 'Hallucinogens', label: 'Hallucinogens (e.g., LSD, Psilocybin, MDMA)' },
+  { value: 'Inhalants', label: 'Inhalants' },
+  // Note: 'Other' checkbox is handled separately below
+];
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+export const SubstanceUseStep: React.FC<SubstanceUseStepProps> = ({
+  substance,
+  updateData,
+  onNext, // Destructure added props
+  onBack, // Destructure added props
+}) => {
+
+  // Handler for general input changes (text, textarea, etc.)
+  // Handles nested changes within substancesDetails array
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    substanceName?: string, // Optional: For identifying which substance detail to update
+    field?: keyof SubstanceDetail // Optional: For identifying the field within substance detail
+  ) => {
+    const { name, value } = e.target;
+
+    if (substanceName && field) {
+      // Update nested substance detail
+      const updatedDetails = substance.substancesDetails.map((detail) =>
+        detail.substance === substanceName ? { ...detail, [field]: value } : detail
+      );
+      updateData({
+        substance: {
+          ...substance,
+          substancesDetails: updatedDetails,
+        },
+      });
+    } else {
+      // Update top-level substance fields
+      updateData({
+        substance: {
+          ...substance,
+          [name]: value,
+        },
+      });
+    }
+  };
+
+  // Handler for RadioGroup changes
+  const handleRadioChange = (name: keyof SubstanceUseData, value: string) => {
     updateData({
       substance: {
         ...substance,
-        [e.target.name]: e.target.value
-      }
-    })
-  }
+        [name]: value,
+      },
+    });
+  };
 
-  const handleCheckboxChange = (id: string, checked: boolean) => {
+  // Handler for Checkbox changes (specifically for usedSubstancesPastYear)
+  const handleCheckboxChange = (checked: boolean | 'indeterminate', substanceValue: string) => {
+    let updatedSubstances: string[];
+    let updatedDetails: SubstanceDetail[];
+
+    if (checked === true) {
+      updatedSubstances = [...substance.usedSubstancesPastYear, substanceValue];
+      // Add a new detail object if it doesn't exist
+      if (!substance.substancesDetails.some(detail => detail.substance === substanceValue)) {
+        updatedDetails = [
+          ...substance.substancesDetails,
+          {
+            substance: substanceValue,
+            ageFirstUse: '',
+            lastUseDate: '',
+            frequency: '',
+            method: '',
+            amount: '',
+            longestAbstinence: '',
+            previousTreatment: '',
+          }
+        ];
+      } else {
+        updatedDetails = [...substance.substancesDetails]; // No change if detail exists
+      }
+    } else {
+      updatedSubstances = substance.usedSubstancesPastYear.filter((s) => s !== substanceValue);
+      // Remove the corresponding detail object
+      updatedDetails = substance.substancesDetails.filter(detail => detail.substance !== substanceValue);
+    }
+
     updateData({
       substance: {
         ...substance,
-        [id]: checked
-      }
-    })
-  }
+        usedSubstancesPastYear: updatedSubstances,
+        substancesDetails: updatedDetails,
+      },
+    });
+  };
 
-  const handleRadioChange = (name: string, value: string) => {
-    updateData({
-      substance: {
-        ...substance,
-        [name]: value
-      }
-    })
-  }
-  
+
+  // --- JSX Structure ---
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Substance Use History</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-6">
-          <div className="space-y-3">
-            <Label>Do you currently use alcohol?</Label>
-            <RadioGroup 
-              value={substance.alcoholUse || ""}
-              onValueChange={(value) => handleRadioChange('alcoholUse', value)}
-              className="grid grid-cols-2 gap-4"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="yes" id="alcoholUseYes" />
-                <Label htmlFor="alcoholUseYes">Yes</Label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="no" id="alcoholUseNo" />
-                <Label htmlFor="alcoholUseNo">No</Label>
-              </div>
-            </RadioGroup>
+    <div className="space-y-6">
+      <h2 className="text-xl font-semibold">Substance Use History</h2>
+
+      {/* Ever Used Substances? */}
+      <div className="space-y-2">
+        <Label>Have you ever used alcohol or other drugs?</Label>
+        <RadioGroup
+          name="everUsed" // Make sure name matches the state key
+          value={substance.everUsed}
+          onValueChange={(value) => handleRadioChange('everUsed', value)}
+          className="flex space-x-4"
+        >
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="Yes" id="everUsedYes" />
+            <Label htmlFor="everUsedYes">Yes</Label>
           </div>
-          
-          {showAlcoholQuestions && (
-            <div className="space-y-3 pl-6 border-l-2 border-gray-200">
-              <div className="space-y-3">
-                <Label>How often do you have a drink containing alcohol?</Label>
-                <RadioGroup 
-                  value={substance.alcoholFrequency || ""}
-                  onValueChange={(value) => handleRadioChange('alcoholFrequency', value)}
-                  className="grid grid-cols-1 gap-4 md:grid-cols-2"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="monthly" id="alcoholMonthly" />
-                    <Label htmlFor="alcoholMonthly">Monthly or less</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="2-4monthly" id="alcohol2-4Monthly" />
-                    <Label htmlFor="alcohol2-4Monthly">2–4 times a month</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="2-3weekly" id="alcohol2-3Weekly" />
-                    <Label htmlFor="alcohol2-3Weekly">2–3 times a week</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="4+weekly" id="alcohol4+Weekly" />
-                    <Label htmlFor="alcohol4+Weekly">4+ times a week</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-              
-              <div className="space-y-3">
-                <Label>How many standard drinks containing alcohol do you have on a typical day when drinking?</Label>
-                <RadioGroup 
-                  value={substance.alcoholQuantity || ""}
-                  onValueChange={(value) => handleRadioChange('alcoholQuantity', value)}
-                  className="grid grid-cols-1 gap-4 md:grid-cols-2"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="1-2" id="alcohol1-2" />
-                    <Label htmlFor="alcohol1-2">1–2</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="3-4" id="alcohol3-4" />
-                    <Label htmlFor="alcohol3-4">3–4</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="5-6" id="alcohol5-6" />
-                    <Label htmlFor="alcohol5-6">5–6</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="7-9" id="alcohol7-9" />
-                    <Label htmlFor="alcohol7-9">7–9</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="10+" id="alcohol10+" />
-                    <Label htmlFor="alcohol10+">10 or more</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-              
-              <div className="space-y-3">
-                <Label>How often do you have 5 or more drinks on one occasion?</Label>
-                <RadioGroup 
-                  value={substance.alcoholBinge || ""}
-                  onValueChange={(value) => handleRadioChange('alcoholBinge', value)}
-                  className="grid grid-cols-1 gap-4 md:grid-cols-2"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="never" id="alcoholBingeNever" />
-                    <Label htmlFor="alcoholBingeNever">Never</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="less_monthly" id="alcoholBingeLessMonthly" />
-                    <Label htmlFor="alcoholBingeLessMonthly">Less than monthly</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="monthly" id="alcoholBingeMonthly" />
-                    <Label htmlFor="alcoholBingeMonthly">Monthly</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="weekly" id="alcoholBingeWeekly" />
-                    <Label htmlFor="alcoholBingeWeekly">Weekly</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="daily" id="alcoholBingeDaily" />
-                    <Label htmlFor="alcoholBingeDaily">Daily or almost daily</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-              
-              <div className="space-y-3">
-                <Label>Have you ever felt you should cut down on your drinking?</Label>
-                <RadioGroup 
-                  value={substance.alcoholCutDown || ""}
-                  onValueChange={(value) => handleRadioChange('alcoholCutDown', value)}
-                  className="grid grid-cols-2 gap-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="yes" id="alcoholCutDownYes" />
-                    <Label htmlFor="alcoholCutDownYes">Yes</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="no" id="alcoholCutDownNo" />
-                    <Label htmlFor="alcoholCutDownNo">No</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-              
-              <div className="space-y-3">
-                <Label>Have people annoyed you by criticizing your drinking?</Label>
-                <RadioGroup 
-                  value={substance.alcoholCriticized || ""}
-                  onValueChange={(value) => handleRadioChange('alcoholCriticized', value)}
-                  className="grid grid-cols-2 gap-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="yes" id="alcoholCriticizedYes" />
-                    <Label htmlFor="alcoholCriticizedYes">Yes</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="no" id="alcoholCriticizedNo" />
-                    <Label htmlFor="alcoholCriticizedNo">No</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-              
-              <div className="space-y-3">
-                <Label>Have you ever felt guilty about your drinking?</Label>
-                <RadioGroup 
-                  value={substance.alcoholGuilt || ""}
-                  onValueChange={(value) => handleRadioChange('alcoholGuilt', value)}
-                  className="grid grid-cols-2 gap-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="yes" id="alcoholGuiltYes" />
-                    <Label htmlFor="alcoholGuiltYes">Yes</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="no" id="alcoholGuiltNo" />
-                    <Label htmlFor="alcoholGuiltNo">No</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-              
-              <div className="space-y-3">
-                <Label>Have you ever had a drink first thing in the morning to steady your nerves or get rid of a hangover?</Label>
-                <RadioGroup 
-                  value={substance.alcoholMorning || ""}
-                  onValueChange={(value) => handleRadioChange('alcoholMorning', value)}
-                  className="grid grid-cols-2 gap-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="yes" id="alcoholMorningYes" />
-                    <Label htmlFor="alcoholMorningYes">Yes</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="no" id="alcoholMorningNo" />
-                    <Label htmlFor="alcoholMorningNo">No</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-              
-              <div className="space-y-3">
-                <Label>Has your alcohol use ever caused problems in your life (e.g. legal, relationship, work, health)?</Label>
-                <RadioGroup 
-                  value={substance.alcoholProblems || ""}
-                  onValueChange={(value) => handleRadioChange('alcoholProblems', value)}
-                  className="grid grid-cols-2 gap-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="yes" id="alcoholProblemsYes" />
-                    <Label htmlFor="alcoholProblemsYes">Yes</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="no" id="alcoholProblemsNo" />
-                    <Label htmlFor="alcoholProblemsNo">No</Label>
-                  </div>
-                </RadioGroup>
-                
-                {substance.alcoholProblems === 'yes' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="alcoholProblemsDescription">Please describe</Label>
-                    <Textarea 
-                      id="alcoholProblemsDescription"
-                      name="alcoholProblemsDescription"
-                      value={substance.alcoholProblemsDescription || ''}
-                      onChange={handleChange}
-                    />
-                  </div>
-                )}
-              </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value="No" id="everUsedNo" />
+            <Label htmlFor="everUsedNo">No</Label>
+          </div>
+        </RadioGroup>
+      </div>
+
+      {/* Conditional Rendering based on 'everUsed' */}
+      {substance.everUsed === 'Yes' && (
+        <>
+          {/* Substances Used in Past Year */}
+          <div className="space-y-2">
+            <Label>Which substances have you used in the past year? (Check all that apply)</Label>
+            <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+              {substanceOptions.map((substanceOption) => (
+                <div key={substanceOption.value} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`substance-${substanceOption.value}`}
+                    checked={substance.usedSubstancesPastYear.includes(substanceOption.value)}
+                    onCheckedChange={(checked) => handleCheckboxChange(checked, substanceOption.value)}
+                  />
+                  <Label htmlFor={`substance-${substanceOption.value}`} className="font-normal">
+                    {substanceOption.label}
+                  </Label>
+                </div>
+              ))}
+               <div className="flex items-center space-x-2">
+                   <Checkbox
+                    id="substance-other"
+                    // Logic needed here if 'Other' needs specific handling
+                    // checked={...}
+                    // onCheckedChange={...}
+                  />
+                   <Label htmlFor="substance-other" className="font-normal">Other</Label>
+               </div>
+            </div>
+             {/* Add Input for 'Other' if needed */}
+          </div>
+
+          {/* Detailed Questions for Each Checked Substance */}
+          {substance.usedSubstancesPastYear.length > 0 && (
+            <div className="space-y-6 border-t pt-6 mt-6">
+              <h3 className="text-lg font-medium">Substance Use Details</h3>
+              {substance.usedSubstancesPastYear.map((substanceName: string) => {
+                 // Find the corresponding detail object
+                const detail = substance.substancesDetails.find(d => d.substance === substanceName);
+                // If detail is somehow undefined (shouldn't happen with current logic), skip rendering
+                if (!detail) return null;
+
+                return (
+                    <div key={substanceName} className="space-y-4 border p-4 rounded-md shadow-sm">
+                      <h4 className="font-semibold text-md">{substanceName}</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Age of First Use */}
+                        <div className="space-y-1">
+                          <Label htmlFor={`${substanceName}-ageFirstUse`}>Age of First Use</Label>
+                          <Input
+                            id={`${substanceName}-ageFirstUse`}
+                            name={`${substanceName}-ageFirstUse`} // Use unique name if needed, but handler uses substanceName/field
+                            value={detail.ageFirstUse}
+                            onChange={(e) => handleChange(e, substanceName, 'ageFirstUse')}
+                            placeholder="e.g., 16"
+                            type="number"
+                          />
+                        </div>
+
+                        {/* Last Use Date */}
+                        <div className="space-y-1">
+                          <Label htmlFor={`${substanceName}-lastUseDate`}>Last Use Date</Label>
+                          <Input
+                            id={`${substanceName}-lastUseDate`}
+                            name={`${substanceName}-lastUseDate`}
+                            value={detail.lastUseDate}
+                            onChange={(e) => handleChange(e, substanceName, 'lastUseDate')}
+                            placeholder="e.g., MM/DD/YYYY or 'Yesterday'"
+                            type="text" // Consider type="date" if strict format needed
+                          />
+                        </div>
+
+                        {/* Frequency */}
+                        <div className="space-y-1">
+                          <Label htmlFor={`${substanceName}-frequency`}>Frequency</Label>
+                          <Input // Consider Select component if options are predefined
+                            id={`${substanceName}-frequency`}
+                            name={`${substanceName}-frequency`}
+                            value={detail.frequency}
+                            onChange={(e) => handleChange(e, substanceName, 'frequency')}
+                            placeholder="e.g., Daily, 3x/week, Weekends"
+                          />
+                        </div>
+
+                        {/* Method/Route */}
+                         <div className="space-y-1">
+                           <Label htmlFor={`${substanceName}-method`}>Method/Route</Label>
+                           <Input // Consider Select
+                             id={`${substanceName}-method`}
+                             name={`${substanceName}-method`}
+                             value={detail.method}
+                             onChange={(e) => handleChange(e, substanceName, 'method')}
+                             placeholder="e.g., Smoked, Injected, Oral"
+                           />
+                         </div>
+
+                        {/* Amount */}
+                        <div className="space-y-1">
+                           <Label htmlFor={`${substanceName}-amount`}>Amount (per use)</Label>
+                           <Input
+                             id={`${substanceName}-amount`}
+                             name={`${substanceName}-amount`}
+                             value={detail.amount}
+                             onChange={(e) => handleChange(e, substanceName, 'amount')}
+                             placeholder="e.g., 1 gram, 6-pack, 1 pint"
+                           />
+                         </div>
+
+                        {/* Longest Period of Abstinence */}
+                        <div className="space-y-1">
+                          <Label htmlFor={`${substanceName}-longestAbstinence`}>Longest Period of Abstinence</Label>
+                          <Input
+                            id={`${substanceName}-longestAbstinence`}
+                            name={`${substanceName}-longestAbstinence`}
+                            value={detail.longestAbstinence}
+                            onChange={(e) => handleChange(e, substanceName, 'longestAbstinence')}
+                            placeholder="e.g., 6 months, 2 years"
+                          />
+                        </div>
+
+                        {/* Previous Treatment for this substance */}
+                        <div className="space-y-1 md:col-span-2">
+                           <Label>Received previous treatment specifically for {substanceName}?</Label>
+                            <RadioGroup
+                                name={`${substanceName}-previousTreatment`} // Unique name per substance
+                                value={detail.previousTreatment}
+                                // Need a dedicated handler or modification to handleRadioChange
+                                // For now, using handleChange but might need adjustment
+                                onValueChange={(value) => updateData({
+                                    substance: {
+                                        ...substance,
+                                        substancesDetails: substance.substancesDetails.map(d =>
+                                            d.substance === substanceName ? { ...d, previousTreatment: value as 'Yes' | 'No' | '' } : d
+                                        )
+                                    }
+                                })}
+                                className="flex space-x-4"
+                            >
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="Yes" id={`${substanceName}-prevTreatYes`} />
+                                    <Label htmlFor={`${substanceName}-prevTreatYes`}>Yes</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="No" id={`${substanceName}-prevTreatNo`} />
+                                    <Label htmlFor={`${substanceName}-prevTreatNo`}>No</Label>
+                                </div>
+                           </RadioGroup>
+                        </div>
+
+                        {/* Treatment Type (Conditional) */}
+                        {detail.previousTreatment === 'Yes' && (
+                            <div className="space-y-1 md:col-span-2">
+                                <Label htmlFor={`${substanceName}-treatmentType`}>If Yes, type of treatment?</Label>
+                                <Input
+                                    id={`${substanceName}-treatmentType`}
+                                    name={`${substanceName}-treatmentType`}
+                                    value={detail.treatmentType || ''}
+                                    onChange={(e) => handleChange(e, substanceName, 'treatmentType')}
+                                    placeholder="e.g., Inpatient, Outpatient, Detox"
+                                />
+                            </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+              })}
             </div>
           )}
-          
-          <div className="space-y-3">
-            <Label>Do you currently use cannabis (marijuana, weed, pot, etc.)?</Label>
-            <RadioGroup 
-              value={substance.cannabisUse || ""}
-              onValueChange={(value) => handleRadioChange('cannabisUse', value)}
-              className="grid grid-cols-2 gap-4"
+
+
+          {/* Overall Treatment History */}
+          <div className="space-y-2 border-t pt-6 mt-6">
+            <Label>Have you ever received treatment for substance use (e.g., detox, rehab, outpatient)?</Label>
+            <RadioGroup
+              name="everReceivedTreatment"
+              value={substance.everReceivedTreatment}
+              onValueChange={(value) => handleRadioChange('everReceivedTreatment', value)}
+              className="flex space-x-4"
             >
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="yes" id="cannabisUseYes" />
-                <Label htmlFor="cannabisUseYes">Yes</Label>
+                <RadioGroupItem value="Yes" id="treatHistYes" />
+                <Label htmlFor="treatHistYes">Yes</Label>
               </div>
-              
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="no" id="cannabisUseNo" />
-                <Label htmlFor="cannabisUseNo">No</Label>
+                <RadioGroupItem value="No" id="treatHistNo" />
+                <Label htmlFor="treatHistNo">No</Label>
               </div>
             </RadioGroup>
           </div>
-          
-          {showCannabisQuestions && (
-            <div className="space-y-3 pl-6 border-l-2 border-gray-200">
-              <div className="space-y-3">
-                <Label>How often do you use cannabis?</Label>
-                <RadioGroup 
-                  value={substance.cannabisFrequency || ""}
-                  onValueChange={(value) => handleRadioChange('cannabisFrequency', value)}
-                  className="grid grid-cols-1 gap-4 md:grid-cols-2"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="monthly" id="cannabisMonthly" />
-                    <Label htmlFor="cannabisMonthly">Monthly or less</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="2-4monthly" id="cannabis2-4Monthly" />
-                    <Label htmlFor="cannabis2-4Monthly">2–4 times a month</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="2-3weekly" id="cannabis2-3Weekly" />
-                    <Label htmlFor="cannabis2-3Weekly">2–3 times a week</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="4+weekly" id="cannabis4+Weekly" />
-                    <Label htmlFor="cannabis4+Weekly">4+ times a week</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="daily" id="cannabisDaily" />
-                    <Label htmlFor="cannabisDaily">Daily</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-              
-              <div className="space-y-3">
-                <Label>What forms of cannabis do you use? (Check all that apply)</Label>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="cannabisSmoked"
-                      checked={substance.cannabisSmoked || false}
-                      onCheckedChange={(checked) => handleCheckboxChange("cannabisSmoked", checked as boolean)}
-                    />
-                    <Label htmlFor="cannabisSmoked">Smoked (joints, pipes, bongs)</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="cannabisVaped"
-                      checked={substance.cannabisVaped || false}
-                      onCheckedChange={(checked) => handleCheckboxChange("cannabisVaped", checked as boolean)}
-                    />
-                    <Label htmlFor="cannabisVaped">Vaped</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="cannabisEdibles"
-                      checked={substance.cannabisEdibles || false}
-                      onCheckedChange={(checked) => handleCheckboxChange("cannabisEdibles", checked as boolean)}
-                    />
-                    <Label htmlFor="cannabisEdibles">Edibles</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="cannabisTinctures"
-                      checked={substance.cannabisTinctures || false}
-                      onCheckedChange={(checked) => handleCheckboxChange("cannabisTinctures", checked as boolean)}
-                    />
-                    <Label htmlFor="cannabisTinctures">Tinctures/oils</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="cannabisConcentrates"
-                      checked={substance.cannabisConcentrates || false}
-                      onCheckedChange={(checked) => handleCheckboxChange("cannabisConcentrates", checked as boolean)}
-                    />
-                    <Label htmlFor="cannabisConcentrates">Concentrates (dabs, wax, etc.)</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="cannabisOther"
-                      checked={substance.cannabisOther || false}
-                      onCheckedChange={(checked) => handleCheckboxChange("cannabisOther", checked as boolean)}
-                    />
-                    <Label htmlFor="cannabisOther">Other</Label>
-                  </div>
-                </div>
-                
-                {substance.cannabisOther && (
-                  <div className="space-y-2">
-                    <Label htmlFor="cannabisOtherDescription">Please specify</Label>
-                    <Textarea 
-                      id="cannabisOtherDescription"
-                      name="cannabisOtherDescription"
-                      value={substance.cannabisOtherDescription || ''}
-                      onChange={handleChange}
-                    />
-                  </div>
-                )}
-              </div>
-              
-              <div className="space-y-3">
-                <Label>Do you use cannabis for medical reasons, recreational reasons, or both?</Label>
-                <RadioGroup 
-                  value={substance.cannabisReason || ""}
-                  onValueChange={(value) => handleRadioChange('cannabisReason', value)}
-                  className="grid grid-cols-1 gap-4 md:grid-cols-3"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="medical" id="cannabisMedical" />
-                    <Label htmlFor="cannabisMedical">Medical</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="recreational" id="cannabisRecreational" />
-                    <Label htmlFor="cannabisRecreational">Recreational</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="both" id="cannabisBoth" />
-                    <Label htmlFor="cannabisBoth">Both</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-              
-              <div className="space-y-3">
-                <Label>Has your cannabis use ever caused problems in your life (e.g. legal, relationship, work, health)?</Label>
-                <RadioGroup 
-                  value={substance.cannabisProblems || ""}
-                  onValueChange={(value) => handleRadioChange('cannabisProblems', value)}
-                  className="grid grid-cols-2 gap-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="yes" id="cannabisProblemsYes" />
-                    <Label htmlFor="cannabisProblemsYes">Yes</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="no" id="cannabisProblemsNo" />
-                    <Label htmlFor="cannabisProblemsNo">No</Label>
-                  </div>
-                </RadioGroup>
-                
-                {substance.cannabisProblems === 'yes' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="cannabisProblemsDescription">Please describe</Label>
-                    <Textarea 
-                      id="cannabisProblemsDescription"
-                      name="cannabisProblemsDescription"
-                      value={substance.cannabisProblemsDescription || ''}
-                      onChange={handleChange}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
+
+          {/* Treatment History Details (Conditional) */}
+          {substance.everReceivedTreatment === 'Yes' && (
+             <div className="space-y-4 border p-4 rounded-md shadow-sm">
+                <h4 className="font-semibold text-md">Treatment History Details</h4>
+                 {/* Needs logic to add/remove/edit treatment entries */}
+                 {/* Placeholder for now */}
+                 <p className="text-sm text-muted-foreground">
+                    [Dynamic fields for Treatment Type, Facility Name, Dates, Completed will go here]
+                 </p>
+             </div>
           )}
-          
-          <div className="space-y-3">
-            <Label>Do you currently use opioids (heroin, fentanyl, oxycodone, etc.)?</Label>
-            <RadioGroup 
-              value={substance.opioidUse || ""}
-              onValueChange={(value) => handleRadioChange('opioidUse', value)}
-              className="grid grid-cols-2 gap-4"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="yes" id="opioidUseYes" />
-                <Label htmlFor="opioidUseYes">Yes</Label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="no" id="opioidUseNo" />
-                <Label htmlFor="opioidUseNo">No</Label>
-              </div>
-            </RadioGroup>
+
+
+          {/* Readiness to Change */}
+          <div className="space-y-2 border-t pt-6 mt-6">
+            <Label htmlFor="readinessToChange">
+              On a scale of 1 to 10, how ready are you to make changes to your substance use?
+              <br /> (1 = Not ready at all, 10 = Extremely ready)
+            </Label>
+            <Input // Consider using a Slider component here
+              id="readinessToChange"
+              name="readinessToChange"
+              type="number"
+              min="1"
+              max="10"
+              value={substance.readinessToChange}
+              onChange={handleChange}
+              className="w-24"
+            />
           </div>
-          
-          <div className="space-y-3">
-            <Label>Do you currently use stimulants (cocaine, methamphetamine, MDMA, etc.)?</Label>
-            <RadioGroup 
-              value={substance.stimulantUse || ""}
-              onValueChange={(value) => handleRadioChange('stimulantUse', value)}
-              className="grid grid-cols-2 gap-4"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="yes" id="stimulantUseYes" />
-                <Label htmlFor="stimulantUseYes">Yes</Label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="no" id="stimulantUseNo" />
-                <Label htmlFor="stimulantUseNo">No</Label>
-              </div>
-            </RadioGroup>
+
+          {/* Additional Comments */}
+          <div className="space-y-2 border-t pt-6 mt-6">
+            <Label htmlFor="additionalComments">Additional comments about your substance use history:</Label>
+            <Textarea
+              id="additionalComments"
+              name="additionalComments"
+              value={substance.additionalComments || ''}
+              onChange={handleChange}
+              placeholder="Any other relevant information..."
+              rows={4}
+            />
           </div>
-          
-          <div className="space-y-3">
-            <Label>Do you currently use any other drugs not mentioned above?</Label>
-            <RadioGroup 
-              value={substance.otherDrugUse || ""}
-              onValueChange={(value) => handleRadioChange('otherDrugUse', value)}
-              className="grid grid-cols-2 gap-4"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="yes" id="otherDrugUseYes" />
-                <Label htmlFor="otherDrugUseYes">Yes</Label>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="no" id="otherDrugUseNo" />
-                <Label htmlFor="otherDrugUseNo">No</Label>
-              </div>
-            </RadioGroup>
-            
-            {substance.otherDrugUse === 'yes' && (
-              <div className="space-y-2">
-                <Label htmlFor="otherDrugDescription">Please specify which drugs and frequency of use</Label>
-                <Textarea 
-                  id="otherDrugDescription"
-                  name="otherDrugDescription"
-                  value={substance.otherDrugDescription || ''}
-                  onChange={handleChange}
-                />
-              </div>
-            )}
+
+          {/* Navigation Buttons */}
+          <div className="flex justify-between pt-6">
+            <Button variant="outline" onClick={onBack} disabled={!onBack}>
+              Back
+            </Button>
+            <Button onClick={onNext} disabled={!onNext}>
+              Next
+            </Button>
           </div>
-          
-          <div className="space-y-3 border-t pt-6">
-            <h3 className="font-semibold">Substance Use Treatment History</h3>
-            
-            <div className="space-y-3">
-              <Label>Have you ever received treatment for substance use?</Label>
-              <RadioGroup 
-                value={substance.substanceTreatment || ""}
-                onValueChange={(value) => handleRadioChange('substanceTreatment', value)}
-                className="grid grid-cols-2 gap-4"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="yes" id="substanceTreatmentYes" />
-                  <Label htmlFor="substanceTreatmentYes">Yes</Label>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="no" id="substanceTreatmentNo" />
-                  <Label htmlFor="substanceTreatmentNo">No</Label>
-                </div>
-              </RadioGroup>
-            </div>
-            
-            {showTreatmentQuestions && (
-              <div className="space-y-3 pl-6 border-l-2 border-gray-200">
-                <Label>What type(s) of treatment have you received? (Check all that apply)</Label>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="treatmentDetox"
-                      checked={substance.treatmentDetox || false}
-                      onCheckedChange={(checked) => handleCheckboxChange("treatmentDetox", checked as boolean)}
-                    />
-                    <Label htmlFor="treatmentDetox">Detoxification</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="treatmentInpatient"
-                      checked={substance.treatmentInpatient || false}
-                      onCheckedChange={(checked) => handleCheckboxChange("treatmentInpatient", checked as boolean)}
-                    />
-                    <Label htmlFor="treatmentInpatient">Inpatient/residential rehab</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="treatmentOutpatient"
-                      checked={substance.treatmentOutpatient || false}
-                      onCheckedChange={(checked) => handleCheckboxChange("treatmentOutpatient", checked as boolean)}
-                    />
-                    <Label htmlFor="treatmentOutpatient">Outpatient program</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="treatmentSupportGroup"
-                      checked={substance.treatmentSupportGroup || false}
-                      onCheckedChange={(checked) => handleCheckboxChange("treatmentSupportGroup", checked as boolean)}
-                    />
-                    <Label htmlFor="treatmentSupportGroup">Support groups (AA, NA, etc.)</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="treatmentMedication"
-                      checked={substance.treatmentMedication || false}
-                      onCheckedChange={(checked) => handleCheckboxChange("treatmentMedication", checked as boolean)}
-                    />
-                    <Label htmlFor="treatmentMedication">Medication-assisted treatment (e.g. methadone, Suboxone)</Label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="treatmentOther"
-                      checked={substance.treatmentOther || false}
-                      onCheckedChange={(checked) => handleCheckboxChange("treatmentOther", checked as boolean)}
-                    />
-                    <Label htmlFor="treatmentOther">Other</Label>
-                  </div>
-                </div>
-                
-                {substance.treatmentOther && (
-                  <div className="space-y-2">
-                    <Label htmlFor="treatmentOtherDescription">Please specify</Label>
-                    <Textarea 
-                      id="treatmentOtherDescription"
-                      name="treatmentOtherDescription"
-                      value={substance.treatmentOtherDescription || ''}
-                      onChange={handleChange}
-                    />
-                  </div>
-                )}
-                
-                <div className="space-y-2">
-                  <Label htmlFor="mostRecentTreatment">When was your most recent treatment? (year)</Label>
-                  <Input 
-                    id="mostRecentTreatment"
-                    name="mostRecentTreatment"
-                    value={substance.mostRecentTreatment || ''}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-            )}
-            
-            <div className="space-y-3">
-              <Label>Have you ever experienced withdrawal symptoms when stopping or reducing substance use?</Label>
-              <RadioGroup 
-                value={substance.withdrawalSymptoms || ""}
-                onValueChange={(value) => handleRadioChange('withdrawalSymptoms', value)}
-                className="grid grid-cols-2 gap-4"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="yes" id="withdrawalSymptomsYes" />
-                  <Label htmlFor="withdrawalSymptomsYes">Yes</Label>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="no" id="withdrawalSymptomsNo" />
-                  <Label htmlFor="withdrawalSymptomsNo">No</Label>
-                </div>
-              </RadioGroup>
-            </div>
-            
-            {showWithdrawalQuestions && (
-              <div className="space-y-3 pl-6 border-l-2 border-gray-200">
-                <div className="space-y-2">
-                  <Label>Which substances have caused withdrawal symptoms? (Check all that apply)</Label>
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="withdrawalAlcohol"
-                        checked={substance.withdrawalAlcohol || false}
-                        onCheckedChange={(checked) => handleCheckboxChange("withdrawalAlcohol", checked as boolean)}
-                      />
-                      <Label htmlFor="withdrawalAlcohol">Alcohol</Label>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="withdrawalOpioids"
-                        checked={substance.withdrawalOpioids || false}
-                        onCheckedChange={(checked) => handleCheckboxChange("withdrawalOpioids", checked as boolean)}
-                      />
-                      <Label htmlFor="withdrawalOpioids">Opioids</Label>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="withdrawalBenzodiazepines"
-                        checked={substance.withdrawalBenzodiazepines || false}
-                        onCheckedChange={(checked) => handleCheckboxChange("withdrawalBenzodiazepines", checked as boolean)}
-                      />
-                      <Label htmlFor="withdrawalBenzodiazepines">Benzodiazepines</Label>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="withdrawalStimulants"
-                        checked={substance.withdrawalStimulants || false}
-                        onCheckedChange={(checked) => handleCheckboxChange("withdrawalStimulants", checked as boolean)}
-                      />
-                      <Label htmlFor="withdrawalStimulants">Stimulants</Label>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="withdrawalCannabis"
-                        checked={substance.withdrawalCannabis || false}
-                        onCheckedChange={(checked) => handleCheckboxChange("withdrawalCannabis", checked as boolean)}
-                      />
-                      <Label htmlFor="withdrawalCannabis">Cannabis</Label>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="withdrawalOther"
-                        checked={substance.withdrawalOther || false}
-                        onCheckedChange={(checked) => handleCheckboxChange("withdrawalOther", checked as boolean)}
-                      />
-                      <Label htmlFor="withdrawalOther">Other</Label>
-                    </div>
-                  </div>
-                  
-                  {substance.withdrawalOther && (
-                    <div className="space-y-2">
-                      <Label htmlFor="withdrawalOtherDescription">Please specify</Label>
-                      <Textarea 
-                        id="withdrawalOtherDescription"
-                        name="withdrawalOtherDescription"
-                        value={substance.withdrawalOtherDescription || ''}
-                        onChange={handleChange}
-                      />
-                    </div>
-                  )}
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="withdrawalSymptomsDescription">Please describe your withdrawal symptoms</Label>
-                  <Textarea 
-                    id="withdrawalSymptomsDescription"
-                    name="withdrawalSymptomsDescription"
-                    value={substance.withdrawalSymptomsDescription || ''}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-            )}
-            
-            <div className="space-y-3">
-              <Label>Are you currently interested in treatment for substance use?</Label>
-              <RadioGroup 
-                value={substance.treatmentInterest || ""}
-                onValueChange={(value) => handleRadioChange('treatmentInterest', value)}
-                className="grid grid-cols-2 gap-4"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="yes" id="treatmentInterestYes" />
-                  <Label htmlFor="treatmentInterestYes">Yes</Label>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="no" id="treatmentInterestNo" />
-                  <Label htmlFor="treatmentInterestNo">No</Label>
-                </div>
-              </RadioGroup>
-            </div>
-            
-            <div className="space-y-3">
-              <Label htmlFor="additionalSubstanceInfo">Is there anything else you would like us to know about your substance use history?</Label>
-              <Textarea 
-                id="additionalSubstanceInfo"
-                name="additionalSubstanceInfo"
-                value={substance.additionalSubstanceInfo || ''}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-        </div>
-      </CardContent>
-      <CardFooter className="flex justify-between">
-        <Button variant="outline" onClick={onBack}>
-          Back
-        </Button>
-        <Button onClick={onNext}>
-          Next
-        </Button>
-      </CardFooter>
-    </Card>
-  )
-}
+        </>
+      )}
+    </div>
+  );
+};

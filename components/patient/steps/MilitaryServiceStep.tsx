@@ -1,253 +1,363 @@
+// components/patient/steps/MilitaryServiceStep.tsx
 "use client"
 
-import type React from "react"
-
-import { useState, useEffect } from "react"
+import React from 'react';
+import { PatientData } from '../PatientIntakeFlow'; // Import PatientData
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
-interface MilitaryService {
-  servedInMilitary: string
-  branches: string[]
-  activeDutyLength: string
-  dischargeType: string
-  dischargeReason: string[]
-  impactedBenefits: string
-  dischargeUpgrade: string
-  emotionalDifficulties: string
-  soughtDischargeSupport: string
-  increasedSubstanceUse: string
-  combatExposure: string
-  conflictType: string
-  serviceInjury: string
-  experiencedTrauma: string
-  traumaSymptoms: string
-  receivedMHServices: string
-  receivingVAServices: string
-  experiencedHarassment: string
-  harassmentType: string[]
-  reportedIncidents: string
-  reportsTakenSeriously: string
-  experiencedRetaliation: string
-  experiencesLedToLeaving: string
-  incidentsImpactHealth: string
-  increasedSubstanceUseService: string
-  substancesUsed: string[]
-  impactedMilitaryCareer: string
-  soughtTreatment: string
-  causedIssues: string
-  additionalDetails: string
+// --- Types defined inline for now, consider moving to /types/steps.ts ---
+// TODO: Define the actual fields for MilitaryServiceData
+// TODO: Move this type to /types/steps.ts or similar (Ref MEMORY[172bf59a])
+export interface MilitaryServiceData { // Defined and Exported
+  servedInMilitary?: 'yes' | 'no';
+  branches?: Array<'army' | 'navy' | 'air_force' | 'marines' | 'coast_guard' | 'space_force'>;
+  activeDutyLength?: string; 
+  dischargeType?: 'honorable' | 'general' | 'other_than_honorable' | 'bad_conduct' | 'dishonorable' | 'uncharacterized' | 'medical' | 'other';
+  dischargeReason?: string;
+
+  impactedBenefits?: 'yes' | 'no'; 
+  dischargeUpgrade?: 'yes' | 'no' | 'attempted_unsuccessful' | 'in_progress';
+
+  combatExposure?: 'yes' | 'no';
+  conflictOrDeployment?: string; 
+
+  serviceInjuryOrCondition?: 'yes' | 'no';
+  injuryDetails?: string; 
+  receivedPurpleHeart?: 'yes' | 'no';
+
+  experiencedMST?: 'yes' | 'no';
+  mstDetails?: string; 
+
+  receivedMHServicesDuring?: 'yes' | 'no';
+  receivedMHServicesAfter?: 'yes' | 'no';
+  currentlyReceivingVAServices?: 'yes' | 'no';
+
+  difficultiesAdjusting?: 'yes' | 'no';
+  adjustmentChallenges?: Array<'employment' | 'relationships' | 'housing' | 'legal' | 'mental_health' | 'substance_use' | 'physical_health' | 'other'>;
+  adjustmentChallengesOther?: string;
+
+  increasedSubstanceUseDuringOrAfter?: 'yes' | 'no';
+
+  additionalMilitaryNotes?: string;
 }
 
-interface MilitaryServiceStepProps {
-  data: Partial<MilitaryService>
-  updateData: (data: Partial<MilitaryService>) => void
-  onNext?: () => void
-  onBack?: () => void
+interface MilitaryServiceStepProps { // Defined props interface
+  militaryService: MilitaryServiceData; // Expect 'militaryService' prop
+  updateData: (newData: Partial<PatientData>) => void; // Expect correct updateData signature
+  onNext?: () => void;
+  onBack?: () => void;
 }
+// --- End Types ---
 
-export function MilitaryServiceStep({ data = {}, updateData, onNext, onBack }: MilitaryServiceStepProps) {
-  // Initialize with default values to prevent undefined errors
-  const defaultData: MilitaryService = {
-    servedInMilitary: "",
-    branches: [],
-    activeDutyLength: "",
-    dischargeType: "",
-    dischargeReason: [],
-    impactedBenefits: "",
-    dischargeUpgrade: "",
-    emotionalDifficulties: "",
-    soughtDischargeSupport: "",
-    increasedSubstanceUse: "",
-    combatExposure: "",
-    conflictType: "",
-    serviceInjury: "",
-    experiencedTrauma: "",
-    traumaSymptoms: "",
-    receivedMHServices: "",
-    receivingVAServices: "",
-    experiencedHarassment: "",
-    harassmentType: [],
-    reportedIncidents: "",
-    reportsTakenSeriously: "",
-    experiencedRetaliation: "",
-    experiencesLedToLeaving: "",
-    incidentsImpactHealth: "",
-    increasedSubstanceUseService: "",
-    substancesUsed: [],
-    impactedMilitaryCareer: "",
-    soughtTreatment: "",
-    causedIssues: "",
-    additionalDetails: "",
-  }
+export function MilitaryServiceStep({ militaryService, updateData, onNext, onBack }: MilitaryServiceStepProps) {
+  const handleChange = (field: keyof MilitaryServiceData, value: string | number | boolean) => {
+    updateData({ militaryService: { ...militaryService, [field]: value } } as Partial<PatientData>);
+  };
 
-  // Merge default data with provided data
-  const [formState, setFormState] = useState<MilitaryService>({
-    ...defaultData,
-    ...data,
-    // Ensure arrays are initialized
-    branches: data.branches || [],
-    dischargeReason: data.dischargeReason || [],
-    harassmentType: data.harassmentType || [],
-    substancesUsed: data.substancesUsed || [],
-  })
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    handleChange(name as keyof MilitaryServiceData, value);
+  };
 
-  // Update local state when data prop changes
-  useEffect(() => {
-    setFormState((prev) => ({
-      ...prev,
-      ...data,
-      // Ensure arrays are initialized
-      branches: data.branches || prev.branches || [],
-      dischargeReason: data.dischargeReason || prev.dischargeReason || [],
-      harassmentType: data.harassmentType || prev.harassmentType || [],
-      substancesUsed: data.substancesUsed || prev.substancesUsed || [],
-    }))
-  }, [data])
+  const handleRadioChange = (field: keyof MilitaryServiceData, value: string) => {
+    handleChange(field, value);
+  };
 
-  const handleChange = (field: keyof MilitaryService, value: string) => {
-    setFormState((prev) => ({ ...prev, [field]: value }))
-    updateData({ [field]: value })
-  }
-
-  const handleCheckboxChange = (field: keyof MilitaryService, value: string, checked: boolean) => {
-    const currentValues = (formState[field] as string[]) || []
-    let newValues: string[]
+  const handleCheckboxChange = (field: keyof MilitaryServiceData, value: string, checked: boolean) => {
+    const currentValues = (militaryService[field] as string[]) || [];
+    let newValues: string[];
 
     if (checked) {
-      newValues = [...currentValues, value]
+      newValues = [...new Set([...currentValues, value])];
     } else {
-      newValues = currentValues.filter((v) => v !== value)
+      newValues = currentValues.filter((v) => v !== value);
     }
+    updateData({ militaryService: { ...militaryService, [field]: newValues } } as Partial<PatientData>);
+  };
 
-    setFormState((prev) => ({ ...prev, [field]: newValues }))
-    updateData({ [field]: newValues })
-  }
+  const renderRadioOption = (groupName: keyof MilitaryServiceData, value: string, label: string) => (
+    <div className="flex items-center space-x-2">
+      <RadioGroupItem value={value} id={`${groupName}-${value}`} />
+      <Label htmlFor={`${groupName}-${value}`}>{label}</Label>
+    </div>
+  );
 
-  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormState((prev) => ({ ...prev, [name]: value }))
-    updateData({ [name as keyof MilitaryService]: value })
-  }
+  const renderCheckboxOption = (fieldName: keyof MilitaryServiceData, value: string, label: string) => (
+    <div className="flex items-center space-x-2">
+      <Checkbox
+        id={`${fieldName}-${value}`}
+        checked={((militaryService[fieldName] as string[]) || []).includes(value)}
+        onCheckedChange={(checked) => handleCheckboxChange(fieldName, value, checked as boolean)}
+      />
+      <Label htmlFor={`${fieldName}-${value}`}>{label}</Label>
+    </div>
+  );
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Military Service History</h2>
-        <p className="text-muted-foreground mb-6">
-          Please answer the following questions about your military service history, if applicable.
-        </p>
-      </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Military Service History</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-8">
 
-      {/* Q5.1 Served in military? */}
-      <div className="space-y-4">
-        <Label className="text-base font-medium">Q5.1 Served in military?</Label>
-        <RadioGroup
-          value={formState.servedInMilitary}
-          onValueChange={(value) => handleChange("servedInMilitary", value)}
-          className="space-y-2"
-        >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="yes" id="military-yes" />
-            <Label htmlFor="military-yes">Yes</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="no" id="military-no" />
-            <Label htmlFor="military-no">No</Label>
-          </div>
-        </RadioGroup>
-      </div>
+        <div className="space-y-2">
+          <Label className="font-medium">Have you ever served in the U.S. Armed Forces (Active Duty, Reserves, or National Guard)?</Label>
+          <RadioGroup
+            value={militaryService.servedInMilitary || ''}
+            onValueChange={(value) => handleRadioChange('servedInMilitary', value)}
+            className="flex space-x-4"
+          >
+            {renderRadioOption('servedInMilitary', 'yes', 'Yes')}
+            {renderRadioOption('servedInMilitary', 'no', 'No')}
+          </RadioGroup>
+        </div>
 
-      {/* Only show the rest of the questions if they served in the military */}
-      {formState.servedInMilitary === "yes" && (
-        <>
-          {/* Q5.2 If yes, branch(es)? */}
-          <div className="space-y-4">
-            <Label className="text-base font-medium">Q5.2 Branch(es)?</Label>
+        {militaryService.servedInMilitary === 'yes' && (
+          <div className="space-y-6 rounded-md border p-4">
+
             <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="branch-army"
-                  checked={formState.branches.includes("army")}
-                  onCheckedChange={(checked) => handleCheckboxChange("branches", "army", checked as boolean)}
-                />
-                <Label htmlFor="branch-army">Army</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="branch-navy"
-                  checked={formState.branches.includes("navy")}
-                  onCheckedChange={(checked) => handleCheckboxChange("branches", "navy", checked as boolean)}
-                />
-                <Label htmlFor="branch-navy">Navy</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="branch-air-force"
-                  checked={formState.branches.includes("air-force")}
-                  onCheckedChange={(checked) => handleCheckboxChange("branches", "air-force", checked as boolean)}
-                />
-                <Label htmlFor="branch-air-force">Air Force</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="branch-marines"
-                  checked={formState.branches.includes("marines")}
-                  onCheckedChange={(checked) => handleCheckboxChange("branches", "marines", checked as boolean)}
-                />
-                <Label htmlFor="branch-marines">Marines</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="branch-coast-guard"
-                  checked={formState.branches.includes("coast-guard")}
-                  onCheckedChange={(checked) => handleCheckboxChange("branches", "coast-guard", checked as boolean)}
-                />
-                <Label htmlFor="branch-coast-guard">Coast Guard</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="branch-guard-reserves"
-                  checked={formState.branches.includes("guard-reserves")}
-                  onCheckedChange={(checked) => handleCheckboxChange("branches", "guard-reserves", checked as boolean)}
-                />
-                <Label htmlFor="branch-guard-reserves">Guard/Reserves</Label>
+              <Label className="font-medium">Branch(es) of Service:</Label>
+              <p className="text-sm text-muted-foreground">Select all that apply:</p>
+              <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+                {renderCheckboxOption('branches', 'army', 'Army')}
+                {renderCheckboxOption('branches', 'navy', 'Navy')}
+                {renderCheckboxOption('branches', 'air_force', 'Air Force')}
+                {renderCheckboxOption('branches', 'marines', 'Marine Corps')}
+                {renderCheckboxOption('branches', 'coast_guard', 'Coast Guard')}
+                {renderCheckboxOption('branches', 'space_force', 'Space Force')}
               </div>
             </div>
-          </div>
 
-          {/* Q5.30 Anything else we should know? */}
-          <div className="space-y-4">
-            <Label htmlFor="additionalDetails" className="text-base font-medium">
-              Q5.30 Anything else we should know about your military service?
-            </Label>
-            <Textarea
-              id="additionalDetails"
-              name="additionalDetails"
-              value={formState.additionalDetails}
-              onChange={handleTextChange}
-              placeholder="Please share any additional information that you feel is important for us to know..."
-              rows={4}
-            />
-          </div>
-        </>
-      )}
+            <div className="space-y-2">
+              <Label htmlFor="activeDutyLength">Approximate Length of Active Duty Service:</Label>
+              <Input id="activeDutyLength" name="activeDutyLength" value={militaryService.activeDutyLength || ''} onChange={handleInputChange} placeholder="e.g., 4 years, 8 months" />
+            </div>
 
-      {/* If they didn't serve in the military, show a message */}
-      {formState.servedInMilitary === "no" && (
-        <div className="p-4 bg-gray-50 rounded-md">
-          <p>No military service history to report. You can proceed to the next section.</p>
-        
-              <div className="flex justify-between">
-              {onBack && <Button variant="outline" onClick={onBack}>Back</Button>}
-              {onNext && <Button onClick={onNext}>Next</Button>}
+            <div className="space-y-2">
+              <Label className="font-medium">Type of Discharge:</Label>
+              <RadioGroup
+                value={militaryService.dischargeType || ''}
+                onValueChange={(value) => handleRadioChange('dischargeType', value)}
+                className="grid grid-cols-2 gap-2 md:grid-cols-3"
+              >
+                {renderRadioOption('dischargeType', 'honorable', 'Honorable')}
+                {renderRadioOption('dischargeType', 'general', 'General (Under Honorable Conditions)')}
+                {renderRadioOption('dischargeType', 'other_than_honorable', 'Other Than Honorable (OTH)')}
+                {renderRadioOption('dischargeType', 'bad_conduct', 'Bad Conduct')}
+                {renderRadioOption('dischargeType', 'dishonorable', 'Dishonorable')}
+                {renderRadioOption('dischargeType', 'uncharacterized', 'Uncharacterized (Entry Level)')}
+                {renderRadioOption('dischargeType', 'medical', 'Medical')}
+                {renderRadioOption('dischargeType', 'other', 'Other/Unknown')}
+              </RadioGroup>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="dischargeReason">Reason for Discharge (if known and comfortable sharing):</Label>
+              <Textarea id="dischargeReason" name="dischargeReason" value={militaryService.dischargeReason || ''} onChange={handleInputChange} />
             </div>
-      )}
-    </div>
-  )
+
+            <div className="space-y-2">
+              <Label className="font-medium">Has your discharge status impacted your access to VA benefits (e.g., healthcare, GI Bill)?</Label>
+              <RadioGroup
+                value={militaryService.impactedBenefits || ''}
+                onValueChange={(value) => handleRadioChange('impactedBenefits', value)}
+                className="flex space-x-4"
+              >
+                {renderRadioOption('impactedBenefits', 'yes', 'Yes')}
+                {renderRadioOption('impactedBenefits', 'no', 'No')}
+                {renderRadioOption('impactedBenefits', 'unsure', 'Unsure')}
+              </RadioGroup>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="font-medium">Have you attempted or are you considering a discharge upgrade?</Label>
+              <RadioGroup
+                value={militaryService.dischargeUpgrade || ''}
+                onValueChange={(value) => handleRadioChange('dischargeUpgrade', value)}
+                className="grid grid-cols-2 gap-2 md:grid-cols-3"
+              >
+                {renderRadioOption('dischargeUpgrade', 'yes', 'Yes, successfully')}
+                {renderRadioOption('dischargeUpgrade', 'attempted_unsuccessful', 'Yes, attempted unsuccessfully')}
+                {renderRadioOption('dischargeUpgrade', 'in_progress', 'Yes, currently in progress')}
+                {renderRadioOption('dischargeUpgrade', 'considering', 'Considering it')}
+                {renderRadioOption('dischargeUpgrade', 'no', 'No')}
+              </RadioGroup>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="font-medium">Were you deployed to a combat zone or exposed to hostile fire/events?</Label>
+              <RadioGroup
+                value={militaryService.combatExposure || ''}
+                onValueChange={(value) => handleRadioChange('combatExposure', value)}
+                className="flex space-x-4"
+              >
+                {renderRadioOption('combatExposure', 'yes', 'Yes')}
+                {renderRadioOption('combatExposure', 'no', 'No')}
+              </RadioGroup>
+            </div>
+            {militaryService.combatExposure === 'yes' && (
+              <div className="space-y-2 border-l-2 border-muted pl-6">
+                <Label htmlFor="conflictOrDeployment">Conflict(s) or Deployment Location(s):</Label>
+                <Input id="conflictOrDeployment" name="conflictOrDeployment" value={militaryService.conflictOrDeployment || ''} onChange={handleInputChange} placeholder="e.g., OIF/OEF, Vietnam, Persian Gulf" />
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label className="font-medium">Did you sustain any significant injuries or develop health conditions during your service (physical or mental)?</Label>
+              <RadioGroup
+                value={militaryService.serviceInjuryOrCondition || ''}
+                onValueChange={(value) => handleRadioChange('serviceInjuryOrCondition', value)}
+                className="flex space-x-4"
+              >
+                {renderRadioOption('serviceInjuryOrCondition', 'yes', 'Yes')}
+                {renderRadioOption('serviceInjuryOrCondition', 'no', 'No')}
+              </RadioGroup>
+            </div>
+            {militaryService.serviceInjuryOrCondition === 'yes' && (
+              <div className="space-y-4 border-l-2 border-muted pl-6">
+                <div className="space-y-2">
+                  <Label htmlFor="injuryDetails">Please describe:</Label>
+                  <Textarea id="injuryDetails" name="injuryDetails" value={militaryService.injuryDetails || ''} onChange={handleInputChange} placeholder="e.g., TBI, PTSD, chronic back pain, hearing loss" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-medium">Did you receive a Purple Heart?</Label>
+                  <RadioGroup
+                    value={militaryService.receivedPurpleHeart || ''}
+                    onValueChange={(value) => handleRadioChange('receivedPurpleHeart', value)}
+                    className="flex space-x-4"
+                  >
+                    {renderRadioOption('receivedPurpleHeart', 'yes', 'Yes')}
+                    {renderRadioOption('receivedPurpleHeart', 'no', 'No')}
+                  </RadioGroup>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2 rounded-md border border-warning/50 bg-warning/10 p-4">
+              <Label className="font-medium text-warning-foreground">Did you experience any unwanted sexual contact, sexual harassment, or assault during your military service (Military Sexual Trauma - MST)?</Label>
+              <p className="text-sm text-warning-foreground/80">Answering this is optional, but helps us provide appropriate support.</p>
+              <RadioGroup
+                value={militaryService.experiencedMST || ''}
+                onValueChange={(value) => handleRadioChange('experiencedMST', value)}
+                className="flex space-x-4"
+              >
+                {renderRadioOption('experiencedMST', 'yes', 'Yes')}
+                {renderRadioOption('experiencedMST', 'no', 'No')}
+                {renderRadioOption('experiencedMST', 'prefer_not_to_say', 'Prefer not to say')}
+              </RadioGroup>
+            </div>
+            {militaryService.experiencedMST === 'yes' && (
+              <div className="space-y-2 border-l-2 border-warning/50 pl-6">
+                <Label htmlFor="mstDetails">If you are comfortable, you may provide brief details (optional):</Label>
+                <Textarea id="mstDetails" name="mstDetails" value={militaryService.mstDetails || ''} onChange={handleInputChange} placeholder="Reporting status, type of incident (optional)"/>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="font-medium">Did you receive any mental health services (counseling, medication) while on active duty?</Label>
+                <RadioGroup
+                  value={militaryService.receivedMHServicesDuring || ''}
+                  onValueChange={(value) => handleRadioChange('receivedMHServicesDuring', value)}
+                  className="flex space-x-4"
+                >
+                  {renderRadioOption('receivedMHServicesDuring', 'yes', 'Yes')}
+                  {renderRadioOption('receivedMHServicesDuring', 'no', 'No')}
+                </RadioGroup>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-medium">Have you received mental health services since leaving the military?</Label>
+                <RadioGroup
+                  value={militaryService.receivedMHServicesAfter || ''}
+                  onValueChange={(value) => handleRadioChange('receivedMHServicesAfter', value)}
+                  className="flex space-x-4"
+                >
+                  {renderRadioOption('receivedMHServicesAfter', 'yes', 'Yes')}
+                  {renderRadioOption('receivedMHServicesAfter', 'no', 'No')}
+                </RadioGroup>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-medium">Are you currently receiving any services from the VA (Veterans Affairs)?</Label>
+                <RadioGroup
+                  value={militaryService.currentlyReceivingVAServices || ''}
+                  onValueChange={(value) => handleRadioChange('currentlyReceivingVAServices', value)}
+                  className="flex space-x-4"
+                >
+                  {renderRadioOption('currentlyReceivingVAServices', 'yes', 'Yes')}
+                  {renderRadioOption('currentlyReceivingVAServices', 'no', 'No')}
+                </RadioGroup>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="font-medium">Have you experienced difficulties adjusting to civilian life after your service?</Label>
+              <RadioGroup
+                value={militaryService.difficultiesAdjusting || ''}
+                onValueChange={(value) => handleRadioChange('difficultiesAdjusting', value)}
+                className="flex space-x-4"
+              >
+                {renderRadioOption('difficultiesAdjusting', 'yes', 'Yes')}
+                {renderRadioOption('difficultiesAdjusting', 'no', 'No')}
+              </RadioGroup>
+            </div>
+            {militaryService.difficultiesAdjusting === 'yes' && (
+              <div className="space-y-2 border-l-2 border-muted pl-6">
+                <Label className="font-medium">In which areas have you faced challenges?</Label>
+                <p className="text-sm text-muted-foreground">Select all that apply:</p>
+                <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+                  {renderCheckboxOption('adjustmentChallenges', 'employment', 'Finding/Keeping Employment')}
+                  {renderCheckboxOption('adjustmentChallenges', 'relationships', 'Relationships (Family/Social)')}
+                  {renderCheckboxOption('adjustmentChallenges', 'housing', 'Housing/Homelessness')}
+                  {renderCheckboxOption('adjustmentChallenges', 'legal', 'Legal Issues')}
+                  {renderCheckboxOption('adjustmentChallenges', 'mental_health', 'Mental Health (e.g., PTSD, depression)')}
+                  {renderCheckboxOption('adjustmentChallenges', 'substance_use', 'Substance Use')}
+                  {renderCheckboxOption('adjustmentChallenges', 'physical_health', 'Physical Health Issues')}
+                  {renderCheckboxOption('adjustmentChallenges', 'other', 'Other')}
+                </div>
+                { (militaryService.adjustmentChallenges || []).includes('other') && (
+                  <div className="mt-2 space-y-1">
+                    <Label htmlFor="adjustmentChallengesOther">Please specify "Other":</Label>
+                    <Input id="adjustmentChallengesOther" name="adjustmentChallengesOther" value={militaryService.adjustmentChallengesOther || ''} onChange={handleInputChange} />
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label className="font-medium">Did you notice an increase in your substance use (alcohol or drugs) during or after your military service?</Label>
+              <RadioGroup
+                value={militaryService.increasedSubstanceUseDuringOrAfter || ''}
+                onValueChange={(value) => handleRadioChange('increasedSubstanceUseDuringOrAfter', value)}
+                className="flex space-x-4"
+              >
+                {renderRadioOption('increasedSubstanceUseDuringOrAfter', 'yes', 'Yes')}
+                {renderRadioOption('increasedSubstanceUseDuringOrAfter', 'no', 'No')}
+              </RadioGroup>
+            </div>
+
+            <div className="space-y-2 pt-4">
+              <Label htmlFor="additionalMilitaryNotes">Is there anything else about your military experience you feel is important for your treatment provider to know?</Label>
+              <Textarea id="additionalMilitaryNotes" name="additionalMilitaryNotes" value={militaryService.additionalMilitaryNotes || ''} onChange={handleInputChange} rows={3} />
+            </div>
+
+          </div>
+        )}
+
+      </CardContent>
+      <CardFooter className="flex justify-between">
+        <Button variant="outline" onClick={onBack} disabled={!onBack}>
+          Back
+        </Button>
+        <Button onClick={onNext} disabled={!onNext}>
+          Next
+        </Button>
+      </CardFooter>
+    </Card>
+  );
 }
-

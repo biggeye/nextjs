@@ -3,39 +3,29 @@
 
 import { useState } from "react"
 import { Stepper } from "@/components/patient/Stepper"
-import { PersonalInfoStep } from "@/components/patient/steps/PersonalInfoStep"
-import { DemographicsStep } from "@/components/patient/steps/DemographicsStep"
-import { CulturalPreferencesStep } from "@/components/patient/steps/CulturalPreferencesStep"
-import { MilitaryServiceStep } from "@/components/patient/steps/MilitaryServiceStep"
-import { SubstanceUseStep } from "@/components/patient/steps/SubstanceUseStep"
-import { MentalHealthStep } from "@/components/patient/steps/MentalHealthStep"
-import { LegalHistoryStep } from "@/components/patient/steps/LegalHistoryStep"
+import { PersonalInfoStep, PersonalInfoData } from "@/components/patient/steps/PersonalInfoStep"
+import { DemographicsStep, DemographicsData } from "@/components/patient/steps/DemographicsStep"
+import { CulturalPreferencesStep, CulturalPreferencesData } from "@/components/patient/steps/CulturalPreferencesStep"
+import { MilitaryServiceStep, MilitaryServiceData } from "@/components/patient/steps/MilitaryServiceStep"
+import { SubstanceUseStep, SubstanceUseData } from "@/components/patient/steps/SubstanceUseStep"
+import { MentalHealthStep, MentalHealthData } from "@/components/patient/steps/MentalHealthStep"
+import { LegalHistoryStep, LegalHistoryData } from "@/components/patient/steps/LegalHistoryStep"
 import { ReviewSubmitStep } from "@/components/patient/steps/ReviewSubmitStep"
-import { SocialFamilyHistoryStep } from "./steps/SocialFamilyHistoryStep"
-import { EmploymentEducationStep } from "./steps/EmploymentEducationStep"
+import { SocialFamilyHistoryStep, SocialFamilyHistoryData } from "./steps/SocialFamilyHistoryStep"
+import { EmploymentEducationStep, EmploymentEducationData } from "./steps/EmploymentEducationStep"
 
 // Define interfaces for the different data types
-interface PersonalInfo {
-  firstName: string;
-  lastName: string;
-  dateOfBirth: string;
-  email: string;
-  phone: string;
-  address: string;
-  emergencyContact: string;
-  emergencyPhone: string;
-}
 
-interface PatientData {
-  personalInfo: PersonalInfo;
-  demographics: Record<string, any>;
-  cultural: Record<string, any>;
-  military: Record<string, any>;
-  substance: Record<string, any>;
-  mentalHealth: Record<string, any>;
-  legalHistory: Record<string, any>;
-  employmentEducation: Record<string, any>;
-  socialFamilyHistory: Record<string, any>;
+export interface PatientData {
+  personalInfo: PersonalInfoData;
+  demographics: DemographicsData;
+  culturalPreferences: CulturalPreferencesData;
+  military: MilitaryServiceData;
+  substance: SubstanceUseData;
+  mentalHealth: MentalHealthData;
+  legalHistory: LegalHistoryData;
+  employmentEducation: EmploymentEducationData;
+  socialFamilyHistory: SocialFamilyHistoryData;
 }
 
 interface PatientIntakeFlowProps {
@@ -52,17 +42,37 @@ export function PatientIntakeFlow({ patientId }: PatientIntakeFlowProps) {
       email: "",
       phone: "",
       address: "",
+      city: "",
+      state: "",
+      zip: "",
       emergencyContact: "",
       emergencyPhone: ""
     },
     demographics: {},
-    cultural: {},
+    culturalPreferences: {},
     military: {},
-    substance: {},
+    substance: {
+      everUsed: '',
+      usedSubstancesPastYear: [],
+      substancesDetails: [],
+      everReceivedTreatment: '',
+      readinessToChange: '',
+    },
     mentalHealth: {},
     legalHistory: {},
     employmentEducation: {},
-    socialFamilyHistory: {}
+    socialFamilyHistory: {
+      maritalStatus: '',
+      livingSituation: '',
+      children: [],
+      familyCompositionDescription: '',
+      familyOriginDescription: '',
+      currentFamilyRelationshipDescription: '',
+      familyHistoryMentalHealthSubstanceAbuse: {
+        exists: '',
+        details: ''
+      }
+    },
   })
 
   const steps = [
@@ -115,16 +125,16 @@ export function PatientIntakeFlow({ patientId }: PatientIntakeFlowProps) {
       <div className="mt-8">
         {currentStep === 0 && (
           <PersonalInfoStep 
-            data={patientData.personalInfo} 
-            updateData={(data) => updateData({ personalInfo: { ...patientData.personalInfo, ...data } })} 
+            personalInfo={patientData.personalInfo} 
+            updateData={updateData} 
             onNext={handleNext}
           />
         )}
         
         {currentStep === 1 && (
           <DemographicsStep 
-            data={patientData.demographics} 
-            updateData={(data) => updateData({ demographics: data })} 
+            demographics={patientData.demographics} 
+            updateData={updateData} 
             onNext={handleNext} 
             onBack={handleBack}
           />
@@ -132,8 +142,8 @@ export function PatientIntakeFlow({ patientId }: PatientIntakeFlowProps) {
         
         {currentStep === 2 && (
           <LegalHistoryStep 
-            data={patientData.legalHistory} 
-            updateData={(data) => updateData({ legalHistory: data })} 
+            legalHistory={patientData.legalHistory} 
+            updateData={updateData} 
             onNext={handleNext} 
             onBack={handleBack}
           />
@@ -141,8 +151,8 @@ export function PatientIntakeFlow({ patientId }: PatientIntakeFlowProps) {
             
         {currentStep === 3 && (
           <MilitaryServiceStep 
-            data={patientData.military} 
-            updateData={(data) => updateData({ military: data })} 
+            militaryService={patientData.military} 
+            updateData={updateData} 
             onNext={handleNext} 
             onBack={handleBack}
           />
@@ -150,8 +160,8 @@ export function PatientIntakeFlow({ patientId }: PatientIntakeFlowProps) {
         
         {currentStep === 4 && (
           <EmploymentEducationStep
-            data={patientData.employmentEducation} 
-            updateData={(data) => updateData({ employmentEducation: data })}
+            employmentEducation={patientData.employmentEducation} 
+            updateData={updateData}
             onNext={handleNext}
             onBack={handleBack}
           />
@@ -159,8 +169,8 @@ export function PatientIntakeFlow({ patientId }: PatientIntakeFlowProps) {
 
         {currentStep === 5 && (
           <CulturalPreferencesStep 
-            data={patientData.cultural} 
-            updateData={(data) => updateData({ cultural: data })} 
+            culturalPreferences={patientData.culturalPreferences} 
+            updateData={updateData} 
             onNext={handleNext} 
             onBack={handleBack}
           />
@@ -168,8 +178,8 @@ export function PatientIntakeFlow({ patientId }: PatientIntakeFlowProps) {
         
         {currentStep === 6 && (
           <SocialFamilyHistoryStep 
-            data={patientData.socialFamilyHistory} 
-            updateData={(data) => updateData({ socialFamilyHistory: data })}
+            socialFamilyHistory={patientData.socialFamilyHistory} 
+            updateData={updateData}
             onNext={handleNext}
             onBack={handleBack}
           />
@@ -177,8 +187,8 @@ export function PatientIntakeFlow({ patientId }: PatientIntakeFlowProps) {
 
         {currentStep === 7 && (
           <MentalHealthStep 
-            data={patientData.mentalHealth} 
-            updateData={(data) => updateData({ mentalHealth: data })} 
+            mentalHealth={patientData.mentalHealth} 
+            updateData={updateData} 
             onNext={handleNext} 
             onBack={handleBack}
           />
@@ -186,8 +196,8 @@ export function PatientIntakeFlow({ patientId }: PatientIntakeFlowProps) {
         
         {currentStep === 8 && (
           <SubstanceUseStep 
-            data={patientData.substance} 
-            updateData={(data) => updateData({ substance: data })} 
+            substance={patientData.substance} 
+            updateData={updateData} 
             onNext={handleNext} 
             onBack={handleBack}
           />

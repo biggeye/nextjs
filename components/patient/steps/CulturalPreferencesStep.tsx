@@ -10,15 +10,26 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 
-interface CulturalPreferencesStepProps {
-  data: any
-  updateData: (data: any) => void
-  onNext?: () => void
-  onBack?: () => void
+// --- Types defined inline for now, consider moving to /types/steps.ts ---
+// TODO: Define the actual fields for CulturalPreferencesData
+// TODO: Move this type to /types/steps.ts or similar (Ref MEMORY[172bf59a])
+export interface CulturalPreferencesData { // Defined and Exported
+  // Currently a placeholder - define specific fields as needed
+  [key: string]: any;
 }
 
-export function CulturalPreferencesStep({ data, updateData, onNext, onBack }: CulturalPreferencesStepProps) {
-  const cultural = data.cultural || {}
+interface CulturalPreferencesStepProps { // Defined props interface
+  culturalPreferences: CulturalPreferencesData; // Expect 'culturalPreferences' prop
+  updateData: (newData: Partial<CulturalPreferencesData>) => void; // Expect correct updateData signature
+  onNext?: () => void;
+  onBack?: () => void;
+}
+// --- End Types ---
+
+export function CulturalPreferencesStep({ culturalPreferences, updateData, onNext, onBack }: CulturalPreferencesStepProps) {
+  const handleChange = (field: string, value: any) => {
+    updateData({ ...culturalPreferences, [field]: value })
+  }
 
   // Adaptive display states
   const [showLanguageQuestions, setShowLanguageQuestions] = useState(false)
@@ -27,24 +38,15 @@ export function CulturalPreferencesStep({ data, updateData, onNext, onBack }: Cu
   const [showCulturalBeliefQuestions, setShowCulturalBeliefQuestions] = useState(false)
 
   useEffect(() => {
-    setShowLanguageQuestions(cultural.primaryLanguageEnglish === "no")
-    setShowInterpreterQuestions(cultural.primaryLanguageEnglish === "no" && cultural.requireInterpreter === "yes")
+    setShowLanguageQuestions(culturalPreferences.primaryLanguageEnglish === "no")
+    setShowInterpreterQuestions(culturalPreferences.primaryLanguageEnglish === "no" && culturalPreferences.requireInterpreter === "yes")
     setShowDifficultyQuestions(
-      cultural.primaryLanguageEnglish === "no" &&
-        cultural.requireInterpreter === "yes" &&
-        cultural.interpreterDifficulty === "yes"
+      culturalPreferences.primaryLanguageEnglish === "no" &&
+        culturalPreferences.requireInterpreter === "yes" &&
+        culturalPreferences.interpreterDifficulty === "yes"
     )
-    setShowCulturalBeliefQuestions(cultural.culturalBeliefs === "yes")
-  }, [cultural])
-
-  const handleChange = (field: string, value: any) => {
-    updateData({
-      cultural: {
-        ...cultural,
-        [field]: value
-      }
-    })
-  }
+    setShowCulturalBeliefQuestions(culturalPreferences.culturalBeliefs === "yes")
+  }, [culturalPreferences])
 
   return (
     <Card>
@@ -55,7 +57,7 @@ export function CulturalPreferencesStep({ data, updateData, onNext, onBack }: Cu
         <div className="space-y-2">
           <Label>Is English your primary language?</Label>
           <RadioGroup 
-            value={cultural.primaryLanguageEnglish || ''} 
+            value={culturalPreferences.primaryLanguageEnglish || ''} 
             onValueChange={(value) => handleChange('primaryLanguageEnglish', value)}
           >
             <div className="flex items-center space-x-2">
@@ -75,7 +77,7 @@ export function CulturalPreferencesStep({ data, updateData, onNext, onBack }: Cu
               <Label htmlFor="primaryLanguage">What is your primary language?</Label>
               <Input 
                 id="primaryLanguage" 
-                value={cultural.primaryLanguage || ''} 
+                value={culturalPreferences.primaryLanguage || ''} 
                 onChange={(e) => handleChange('primaryLanguage', e.target.value)} 
               />
             </div>
@@ -83,7 +85,7 @@ export function CulturalPreferencesStep({ data, updateData, onNext, onBack }: Cu
             <div className="space-y-2">
               <Label>Do you require an interpreter?</Label>
               <RadioGroup 
-                value={cultural.requireInterpreter || ''} 
+                value={culturalPreferences.requireInterpreter || ''} 
                 onValueChange={(value) => handleChange('requireInterpreter', value)}
               >
                 <div className="flex items-center space-x-2">
@@ -103,7 +105,7 @@ export function CulturalPreferencesStep({ data, updateData, onNext, onBack }: Cu
           <div className="space-y-2">
             <Label>Have you had difficulty in the past with interpreters?</Label>
             <RadioGroup 
-              value={cultural.interpreterDifficulty || ''} 
+              value={culturalPreferences.interpreterDifficulty || ''} 
               onValueChange={(value) => handleChange('interpreterDifficulty', value)}
             >
               <div className="flex items-center space-x-2">
@@ -123,7 +125,7 @@ export function CulturalPreferencesStep({ data, updateData, onNext, onBack }: Cu
             <Label htmlFor="interpreterDifficultyDetails">Please explain the difficulties you've experienced:</Label>
             <Textarea 
               id="interpreterDifficultyDetails" 
-              value={cultural.interpreterDifficultyDetails || ''} 
+              value={culturalPreferences.interpreterDifficultyDetails || ''} 
               onChange={(e) => handleChange('interpreterDifficultyDetails', e.target.value)} 
             />
           </div>
@@ -132,7 +134,7 @@ export function CulturalPreferencesStep({ data, updateData, onNext, onBack }: Cu
         <div className="space-y-2">
           <Label>Do you have cultural or religious beliefs that might affect your care?</Label>
           <RadioGroup 
-            value={cultural.culturalBeliefs || ''} 
+            value={culturalPreferences.culturalBeliefs || ''} 
             onValueChange={(value) => handleChange('culturalBeliefs', value)}
           >
             <div className="flex items-center space-x-2">
@@ -151,7 +153,7 @@ export function CulturalPreferencesStep({ data, updateData, onNext, onBack }: Cu
             <Label htmlFor="culturalBeliefsDetails">Please explain your cultural or religious needs:</Label>
             <Textarea 
               id="culturalBeliefsDetails" 
-              value={cultural.culturalBeliefsDetails || ''} 
+              value={culturalPreferences.culturalBeliefsDetails || ''} 
               onChange={(e) => handleChange('culturalBeliefsDetails', e.target.value)} 
             />
           </div>

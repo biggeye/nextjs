@@ -1,8 +1,5 @@
 //import PatientPreAssessment from "@/components/patient/PatientPreAssessment"
 import { Suspense } from "react"
-import dynamic from "next/dynamic"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle } from "lucide-react"
 import { DynamicIntakeLoader } from "@/components/patient/DynamicIntakeLoader"
 
 export default function HomePage() {

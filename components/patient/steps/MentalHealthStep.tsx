@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import { MentalHealthData } from '@/types/steps';
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -9,15 +10,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input" 
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
-// Define the shape of the data for this step based on master.md
-export interface MentalHealthData { 
-  // Currently a placeholder - define specific fields as needed
-  [key: string]: any;
-}
-
 interface MentalHealthStepProps { 
   mentalHealth: MentalHealthData; 
-  updateData: (newData: Partial<MentalHealthData>) => void; 
+  updateData: (field: keyof MentalHealthData, value: any) => void; 
   onNext?: () => void;
   onBack?: () => void;
 }
@@ -25,7 +20,7 @@ interface MentalHealthStepProps {
 export function MentalHealthStep({ mentalHealth, updateData, onBack, onNext }: MentalHealthStepProps) {
   // Placeholder handler - adjust based on actual MentalHealthData fields
   const handleChange = (field: string, value: any) => {
-    updateData({ ...mentalHealth, [field]: value }); 
+    updateData(field as keyof MentalHealthData, value); 
   };
 
   // Example input/textarea handler
@@ -47,7 +42,7 @@ export function MentalHealthStep({ mentalHealth, updateData, onBack, onNext }: M
     } else {
       newValues = currentValues.filter((v) => v !== value);
     }
-    updateData({ ...mentalHealth, [field]: newValues }); 
+    updateData(field as keyof MentalHealthData, newValues);
   };
 
   // Helper to render Radio Options

@@ -2,34 +2,18 @@
 "use client"
 
 import React from 'react';
-import { PatientData } from '../PatientIntakeFlow'; // Import PatientData
+import { PatientData } from '@/types/patient'; // Corrected PatientData import
+import { PersonalInfoData } from '@/types/steps'; // Import centralized type
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
-// --- Types defined inline for now, consider moving to /types/steps.ts ---
-// TODO: Move this type to /types/steps.ts or similar (Ref MEMORY[172bf59a])
-export interface PersonalInfoData { // Defined and Exported
-  firstName: string;
-  lastName: string;
-  dateOfBirth: string;
-  email: string;
-  phone: string;
-  address: string;
-  city: string;
-  state: string;
-  zip: string;
-  emergencyContact: string;
-  emergencyPhone: string;
-}
-
 interface PersonalInfoStepProps { // Defined props interface
-  personalInfo: PersonalInfoData; // Expect 'personalInfo' prop
-  updateData: (newData: Partial<PatientData>) => void; // Expect correct updateData signature
+  personalInfo: PersonalInfoData; // Expect 'personalInfo' prop (now uses imported type)
+  updateData: (field: keyof PersonalInfoData, value: any) => void; // Updated updateData signature
   onNext?: () => void;
 }
-// --- End Types ---
 
 export const PersonalInfoStep: React.FC<PersonalInfoStepProps> = ({
   personalInfo, // Destructure correct prop
@@ -38,12 +22,8 @@ export const PersonalInfoStep: React.FC<PersonalInfoStepProps> = ({
 }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    updateData({
-      personalInfo: { // Update using the correct key
-        ...personalInfo,
-        [name]: value,
-      },
-    });
+    // Type safety should now be enforced by the updated updateData signature and PatientData type
+    updateData(name as keyof PersonalInfoData, value);
   };
 
   return (

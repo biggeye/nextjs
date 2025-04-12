@@ -1,3 +1,4 @@
+// components/patient/steps/ReviewSubmitStep.tsx
 "use client"
 
 import { useState } from "react"
@@ -5,295 +6,220 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { ChevronDown, ChevronUp } from "lucide-react"
+import { PatientData } from "@/types/patient" // Assuming this path is correct
 
+// Define the props for the component
 interface ReviewSubmitStepProps {
-  data: any
-  updateData: (data: any) => void
-  onBack: () => void
+  patientData: PatientData;
+  onSubmit: () => Promise<void>; // Function to call on final submission
+  onBack: () => void;
+  isSubmitting: boolean; // Flag to indicate if submission is in progress
 }
 
-export function ReviewSubmitStep({ data = {}, updateData, onBack }: ReviewSubmitStepProps) {
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-    socialFamilyHistory: true,
-    employmentEducation: false,
-    militaryService: false,
-  })
+// Helper function to display values nicely
+const formatValue = (value: any): string => {
+  if (value === undefined || value === null || value === "") {
+    return "Not provided";
+  }
+  if (Array.isArray(value)) {
+    return value.length > 0 ? value.join(", ") : "None";
+  }
+  if (typeof value === 'boolean') {
+    return value ? "Yes" : "No";
+  }
+  // Add formatting for dates if needed
+  // if (value instanceof Date) { ... }
+  return String(value);
+};
+
+// Helper component/function to render fields for a section
+const renderSectionFields = (data: Record<string, any> | null | undefined) => {
+  if (!data) return <p className="text-muted-foreground">No data provided for this section.</p>;
+
+  const entries = Object.entries(data);
+  if (entries.length === 0) return <p className="text-muted-foreground">No data provided for this section.</p>;
+
+  // Example: Manually map known fields to labels
+  // You might need a more sophisticated approach based on your exact types
+  const fieldLabels: Record<string, string> = {
+    // Personal Info
+    firstName: "First Name", lastName: "Last Name", dateOfBirth: "Date of Birth", email: "Email", phone: "Phone",
+    address: "Address", city: "City", state: "State", zip: "Zip", emergencyContact: "Emergency Contact", emergencyPhone: "Emergency Phone",
+    // Demographics
+    gender: "Gender", race: "Race/Ethnicity", preferredLanguage: "Preferred Language", requiresInterpreter: "Interpreter Required",
+    // Education
+    highestLevel: "Highest Education Level", schoolName: "School Name", fieldOfStudy: "Field of Study", graduationYear: "Graduation Year",
+    // Employment
+    employmentStatus: "Employment Status", occupation: "Occupation", employer: "Employer", workAddress: "Work Address", workPhone: "Work Phone",
+    // Military
+    branch: "Branch", rank: "Rank", yearsOfService: "Years of Service", dischargeStatus: "Discharge Status", deployed: "Deployed", deploymentLocations: "Deployment Locations",
+    // Legal
+    probationOrParole: "Probation/Parole", probationOfficerName: "PO Name", probationOfficerContact: "PO Contact", pendingCharges: "Pending Charges", pastConvictions: "Past Convictions",
+    // Cultural
+    culturalBackground: "Cultural Background", spiritualBeliefs: "Spiritual Beliefs", specificNeeds: "Specific Needs/Preferences",
+    // Social/Family
+    livingStatus: "Living Situation", unstableDuration: "Unstable Duration", instabilityCause: "Cause of Instability", experiencedViolence: "Experienced Violence", familyRelationships: "Family Relationships", abuseHistory: "Abuse History", experiencedTrauma: "Experienced Trauma", traumaType: "Trauma Type",
+    // Mental Health (Example fields)
+    diagnosedConditions: "Diagnosed Conditions", currentSymptoms: "Current Symptoms", pastTreatment: "Past Treatment", medication: "Medication", suicidalThoughts: "Suicidal Thoughts", selfHarmHistory: "Self-Harm History",
+    // Substance Use (Example fields)
+    everUsed: "Ever Used Substances", usedSubstancesPastYear: "Used Past Year", substancesDetails: "Substance Details", everReceivedTreatment: "Received Treatment", readinessToChange: "Readiness to Change",
+    // Add other sections/fields as needed
+  };
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
+      {entries.map(([key, value]) => (
+        <div key={key}>
+          <span className="font-medium">{fieldLabels[key] || key}:</span>{" "}
+          {formatValue(value)}
+          {/* If value is an object (like substancesDetails), you might need custom rendering */}
+          {key === 'substancesDetails' && Array.isArray(value) && (
+             <div className="pl-4 mt-1 text-sm space-y-1">
+               {value.map((detail: any, index: number) => (
+                 <div key={index} className="border-l-2 pl-2">
+                   <div>Substance: {detail.substance}</div>
+                   <div>Frequency: {detail.frequency}</div>
+                   <div>Amount: {detail.amount}</div>
+                   <div>Last Use: {detail.lastUse}</div>
+                 </div>
+               ))}
+             </div>
+          )}
+        </div>
+      ))}
+       {data.additionalDetails && (
+         <div className="col-span-1 md:col-span-2 mt-2">
+           <span className="font-medium">Additional Details:</span>
+           <p className="mt-1 p-2 bg-gray-50 rounded-md whitespace-pre-wrap text-sm">
+             {formatValue(data.additionalDetails)}
+           </p>
+         </div>
+       )}
+    </div>
+  );
+};
+
+
+export function ReviewSubmitStep({ patientData, onSubmit, onBack, isSubmitting }: ReviewSubmitStepProps) {
+  // Define all sections based on PatientData keys
+  const allSections = Object.keys(patientData).filter(key => typeof patientData[key as keyof PatientData] === 'object' && patientData[key as keyof PatientData] !== null);
+
+  const initialExpandedState = allSections.reduce((acc, section) => {
+    // Example: Expand personalInfo and consent by default, collapse others
+    acc[section] = ['personalInfo', 'consent'].includes(section);
+    return acc;
+  }, {} as Record<string, boolean>);
+
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(initialExpandedState);
+  const [consentChecked, setConsentChecked] = useState(false);
 
   const toggleSection = (section: string) => {
     setExpandedSections((prev) => ({
       ...prev,
       [section]: !prev[section],
-    }))
-  }
+    }));
+  };
 
-  const [consentChecked, setConsentChecked] = useState(false)
+  // Map keys to display names
+  const sectionDisplayNames: Record<keyof PatientData | string, string> = {
+    personalInfo: "Personal Information",
+    demographics: "Demographics",
+    education: "Education History",
+    employment: "Employment History",
+    military: "Military Service",
+    legalHistory: "Legal History",
+    culturalPreferences: "Cultural Preferences",
+    socialFamilyHistory: "Social & Family History",
+    mentalHealth: "Mental Health History",
+    substance: "Substance Use History",
+    traumaHistory: "Trauma History",
+    medicalHistory: "Medical History",
+    strengthsResources: "Strengths & Resources",
+    treatmentGoals: "Treatment Goals",
+    consent: "Consent & Signatures" // Assuming consent is part of patientData
+  };
 
-  // Helper function to display values in a readable format
-  const formatValue = (key: string, value: any): string => {
-    if (value === undefined || value === null || value === "") {
-      return "Not provided"
-    }
-
-    if (Array.isArray(value)) {
-      if (value.length === 0) {
-        return "None"
-      }
-      return value.join(", ")
-    }
-
-    return value.toString()
-  }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold mb-4">Review & Submit</h2>
+        <h2 className="text-2xl font-semibold mb-3">Review & Submit</h2>
         <p className="text-muted-foreground mb-6">
-          Please review your information before submitting. You can go back to any section to make changes.
+          Please review all your information carefully before submitting. You can use the back button to navigate to previous steps and make changes if needed.
         </p>
       </div>
 
-      {/* Social & Family History Section */}
-      <div className="border rounded-md overflow-hidden">
-        <div
-          className="flex items-center justify-between p-4 bg-gray-50 cursor-pointer"
-          onClick={() => toggleSection("socialFamilyHistory")}
-        >
-          <h3 className="text-lg font-medium">Social & Family History</h3>
-          <Button variant="ghost" size="sm">
-            {expandedSections.socialFamilyHistory ? (
-              <ChevronUp className="h-5 w-5" />
-            ) : (
-              <ChevronDown className="h-5 w-5" />
-            )}
-          </Button>
-        </div>
+      {/* Dynamically render sections */}
+      {allSections.map((sectionKey) => {
+        const sectionData = patientData[sectionKey as keyof PatientData];
+        // Skip rendering if data is explicitly null or undefined, or maybe empty object for non-consent sections?
+        if (!sectionData && sectionKey !== 'consent') return null;
+        // Skip rendering sections we don't have a display name for (optional)
+        if (!sectionDisplayNames[sectionKey]) return null;
 
-        {expandedSections.socialFamilyHistory && (
-          <div className="p-4 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <span className="font-medium">Current Living Situation:</span>{" "}
-                {formatValue("livingStatus", data.socialFamilyHistory?.livingStatus)}
-              </div>
-              {data.socialFamilyHistory?.livingStatus === "unstable" ||
-              data.socialFamilyHistory?.livingStatus === "homeless" ? (
-                <div>
-                  <span className="font-medium">Duration:</span>{" "}
-                  {formatValue("unstableDuration", data.socialFamilyHistory?.unstableDuration)}
-                </div>
-              ) : null}
-              {data.socialFamilyHistory?.livingStatus === "unstable" ||
-              data.socialFamilyHistory?.livingStatus === "homeless" ? (
-                <div>
-                  <span className="font-medium">Cause of Instability:</span>{" "}
-                  {formatValue("instabilityCause", data.socialFamilyHistory?.instabilityCause)}
-                </div>
-              ) : null}
-              <div>
-                <span className="font-medium">Experienced Violence/Harm:</span>{" "}
-                {formatValue("experiencedViolence", data.socialFamilyHistory?.experiencedViolence)}
-              </div>
-              <div>
-                <span className="font-medium">Family Relationships:</span>{" "}
-                {formatValue("familyRelationships", data.socialFamilyHistory?.familyRelationships)}
-              </div>
-              <div>
-                <span className="font-medium">History of Abuse/Neglect:</span>{" "}
-                {formatValue("abuseHistory", data.socialFamilyHistory?.abuseHistory)}
-              </div>
-              <div>
-                <span className="font-medium">Experienced Trauma/Loss:</span>{" "}
-                {formatValue("experiencedTrauma", data.socialFamilyHistory?.experiencedTrauma)}
-              </div>
-              {data.socialFamilyHistory?.experiencedTrauma && data.socialFamilyHistory?.experiencedTrauma !== "none" ? (
-                <div>
-                  <span className="font-medium">Type of Trauma:</span>{" "}
-                  {formatValue("traumaType", data.socialFamilyHistory?.traumaType)}
-                </div>
-              ) : null}
+        return (
+          <div key={sectionKey} className="border rounded-md overflow-hidden shadow-sm">
+            <div
+              className="flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors"
+              onClick={() => toggleSection(sectionKey)}
+            >
+              <h3 className="text-lg font-medium">{sectionDisplayNames[sectionKey]}</h3>
+              <Button variant="ghost" size="sm" aria-label={expandedSections[sectionKey] ? 'Collapse section' : 'Expand section'}>
+                {expandedSections[sectionKey] ? (
+                  <ChevronUp className="h-5 w-5" />
+                ) : (
+                  <ChevronDown className="h-5 w-5" />
+                )}
+              </Button>
             </div>
 
-            {data.socialFamilyHistory?.additionalDetails && (
-              <div className="mt-4">
-                <span className="font-medium">Additional Details:</span>
-                <p className="mt-1 p-2 bg-gray-50 rounded-md whitespace-pre-wrap">
-                  {data.socialFamilyHistory?.additionalDetails}
-                </p>
+            {expandedSections[sectionKey] && (
+              <div className="p-4 space-y-4 border-t">
+                {/* Render fields specific to the consent section or use the helper */}
+                {sectionKey === 'consent' ? (
+                   <div>Consent fields here... (e.g., checkboxes, signature areas)</div>
+                ) : (
+                   renderSectionFields(sectionData as Record<string, any>)
+                )}
               </div>
             )}
           </div>
-        )}
-      </div>
+        );
+      })}
 
-      {/* Employment & Education Section */}
-      <div className="border rounded-md overflow-hidden">
-        <div
-          className="flex items-center justify-between p-4 bg-gray-50 cursor-pointer"
-          onClick={() => toggleSection("employmentEducation")}
-        >
-          <h3 className="text-lg font-medium">Employment & Education</h3>
-          <Button variant="ghost" size="sm">
-            {expandedSections.employmentEducation ? (
-              <ChevronUp className="h-5 w-5" />
-            ) : (
-              <ChevronDown className="h-5 w-5" />
-            )}
-          </Button>
-        </div>
-
-        {expandedSections.employmentEducation && (
-          <div className="p-4 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <span className="font-medium">Employment Status:</span>{" "}
-                {formatValue("employmentStatus", data.employmentEducation?.employmentStatus)}
-              </div>
-              {data.employmentEducation?.employmentStatus === "unemployed" ? (
-                <div>
-                  <span className="font-medium">Last Employment:</span>{" "}
-                  {formatValue("lastEmployment", data.employmentEducation?.lastEmployment)}
-                </div>
-              ) : null}
-              {data.employmentEducation?.lastEmployment === "never" ? (
-                <div>
-                  <span className="font-medium">Support Method:</span>{" "}
-                  {formatValue("supportMethod", data.employmentEducation?.supportMethod)}
-                </div>
-              ) : null}
-              {data.employmentEducation?.employmentStatus === "full-time" ||
-              data.employmentEducation?.employmentStatus === "part-time" ||
-              data.employmentEducation?.employmentStatus === "self-employed" ? (
-                <div>
-                  <span className="font-medium">Current Job Duration:</span>{" "}
-                  {formatValue("currentJobDuration", data.employmentEducation?.currentJobDuration)}
-                </div>
-              ) : null}
-              {data.employmentEducation?.employmentStatus === "student" ? (
-                <div>
-                  <span className="font-medium">Educational Setting:</span>{" "}
-                  {formatValue("educationalSetting", data.employmentEducation?.educationalSetting)}
-                </div>
-              ) : null}
-            </div>
-
-            {data.employmentEducation?.additionalDetails && (
-              <div className="mt-4">
-                <span className="font-medium">Additional Details:</span>
-                <p className="mt-1 p-2 bg-gray-50 rounded-md whitespace-pre-wrap">
-                  {data.employmentEducation?.additionalDetails}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Military Service Section */}
-      <div className="border rounded-md overflow-hidden">
-        <div
-          className="flex items-center justify-between p-4 bg-gray-50 cursor-pointer"
-          onClick={() => toggleSection("militaryService")}
-        >
-          <h3 className="text-lg font-medium">Military Service History</h3>
-          <Button variant="ghost" size="sm">
-            {expandedSections.militaryService ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-          </Button>
-        </div>
-
-        {expandedSections.militaryService && (
-          <div className="p-4 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <span className="font-medium">Served in Military:</span>{" "}
-                {formatValue("servedInMilitary", data.militaryService?.servedInMilitary)}
-              </div>
-
-              {data.militaryService?.servedInMilitary === "yes" ? (
-                <>
-                  <div>
-                    <span className="font-medium">Branch(es):</span>{" "}
-                    {formatValue("branches", data.militaryService?.branches)}
-                  </div>
-                  <div>
-                    <span className="font-medium">Length of Active Duty:</span>{" "}
-                    {formatValue("activeDutyLength", data.militaryService?.activeDutyLength)}
-                  </div>
-                  <div>
-                    <span className="font-medium">Discharge Type:</span>{" "}
-                    {formatValue("dischargeType", data.militaryService?.dischargeType)}
-                  </div>
-                  <div>
-                    <span className="font-medium">Combat Exposure:</span>{" "}
-                    {formatValue("combatExposure", data.militaryService?.combatExposure)}
-                  </div>
-                  {data.militaryService?.combatExposure === "yes" ? (
-                    <div>
-                      <span className="font-medium">Conflict:</span>{" "}
-                      {formatValue("conflictType", data.militaryService?.conflictType)}
-                    </div>
-                  ) : null}
-                  <div>
-                    <span className="font-medium">Substance Use Increased:</span>{" "}
-                    {formatValue("increasedSubstanceUseService", data.militaryService?.increasedSubstanceUseService)}
-                  </div>
-                  {data.militaryService?.increasedSubstanceUseService === "yes" ? (
-                    <div>
-                      <span className="font-medium">Substances Used:</span>{" "}
-                      {formatValue("substancesUsed", data.militaryService?.substancesUsed)}
-                    </div>
-                  ) : null}
-                </>
-              ) : (
-                <div>
-                  <span className="text-muted-foreground italic">No military service reported</span>
-                </div>
-              )}
-            </div>
-
-            {data.militaryService?.additionalDetails && (
-              <div className="mt-4">
-                <span className="font-medium">Additional Details:</span>
-                <p className="mt-1 p-2 bg-gray-50 rounded-md whitespace-pre-wrap">
-                  {data.militaryService?.additionalDetails}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
 
       {/* Consent Checkbox */}
-      <div className="p-4 border rounded-md bg-gray-50">
-        <div className="flex items-start space-x-3">
+      <div className="border rounded-md p-4 space-y-4 shadow-sm">
+         <h3 className="text-lg font-medium mb-2">Consent</h3>
+         <p className="text-sm text-muted-foreground">
+             [Insert your consent statement here. Example: I confirm that the information provided is accurate to the best of my knowledge and consent to its use for treatment purposes.]
+         </p>
+        <div className="flex items-center space-x-2 pt-2">
           <Checkbox
             id="consent"
             checked={consentChecked}
-            onCheckedChange={(checked) => {
-              setConsentChecked(checked as boolean)
-              updateData({ consentChecked: checked })
-            }}
+            onCheckedChange={(checked) => setConsentChecked(Boolean(checked))}
+            aria-label="Consent to submit information"
           />
-          <div className="space-y-1">
-            <Label htmlFor="consent" className="font-medium">
-              Consent to Information Use
-            </Label>
-            <p className="text-sm text-muted-foreground">
-              I confirm that the information provided is accurate to the best of my knowledge. I understand that this
-              information will be used by healthcare providers to assess my condition and provide appropriate behavioral
-              health and addiction treatment services.
-            </p>
-          </div>
+          <Label htmlFor="consent" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+            I have reviewed the information and confirm it is accurate.
+          </Label>
         </div>
       </div>
 
-      <div className="text-center">
-        <p className="text-sm text-muted-foreground mb-4">
-          Please review all information carefully before submitting. Once submitted, this information will be securely
-          stored and accessible to your healthcare provider.
-        </p>
+      {/* Navigation Buttons */}
+      <div className="flex justify-between pt-4">
+        <Button variant="outline" onClick={onBack} disabled={isSubmitting}>
+          Back
+        </Button>
+        <Button
+          type="button" // Changed from submit to prevent default form submission if wrapped in form
+          onClick={onSubmit}
+          disabled={!consentChecked || isSubmitting}
+        >
+          {isSubmitting ? "Submitting..." : "Submit Intake Form"}
+        </Button>
       </div>
     </div>
   )
 }
-

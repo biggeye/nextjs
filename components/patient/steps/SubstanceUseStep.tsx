@@ -38,7 +38,7 @@ export interface SubstanceUseData {
 
 interface SubstanceUseStepProps {
   substance: SubstanceUseData;
-  updateData: (newData: Partial<PatientData>) => void;
+  updateData: (field: keyof SubstanceUseData, value: any) => void;
   onNext?: () => void; // Added navigation prop
   onBack?: () => void; // Added navigation prop
 }
@@ -66,85 +66,129 @@ export const SubstanceUseStep: React.FC<SubstanceUseStepProps> = ({
 
   // Handler for general input changes (text, textarea, etc.)
   // Handles nested changes within substancesDetails array
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-    substanceName?: string, // Optional: For identifying which substance detail to update
-    field?: keyof SubstanceDetail // Optional: For identifying the field within substance detail
-  ) => {
-    const { name, value } = e.target;
-
-    if (substanceName && field) {
-      // Update nested substance detail
-      const updatedDetails = substance.substancesDetails.map((detail) =>
-        detail.substance === substanceName ? { ...detail, [field]: value } : detail
-      );
-      updateData({
-        substance: {
-          ...substance,
-          substancesDetails: updatedDetails,
-        },
-      });
-    } else {
-      // Update top-level substance fields
-      updateData({
-        substance: {
-          ...substance,
-          [name]: value,
-        },
-      });
+  const handleChange = (field: keyof SubstanceUseData, value: any) => {
+    // Conditional logic: If 'everUsed' is 'No', clear related fields
+    if (field === 'everUsed' && value === 'No') {
+      updateData('usedSubstancesPastYear', []);
+      updateData('substancesDetails', []);
+      updateData('everReceivedTreatment', ''); // Example: Clear this too
     }
+    
+    // Conditional logic: If 'everReceivedTreatment' is 'No', clear history
+    if (field === 'everReceivedTreatment' && value === 'No') {
+      updateData('treatmentHistory', []);
+    }
+
+    // Update the primary field
+    updateData(field, value);
   };
 
   // Handler for RadioGroup changes
-  const handleRadioChange = (name: keyof SubstanceUseData, value: string) => {
-    updateData({
-      substance: {
-        ...substance,
-        [name]: value,
-      },
-    });
+  const handleRadioChange = (field: keyof SubstanceUseData, value: string) => {
+    handleChange(field, value);
   };
 
   // Handler for Checkbox changes (specifically for usedSubstancesPastYear)
-  const handleCheckboxChange = (checked: boolean | 'indeterminate', substanceValue: string) => {
-    let updatedSubstances: string[];
-    let updatedDetails: SubstanceDetail[];
-
-    if (checked === true) {
-      updatedSubstances = [...substance.usedSubstancesPastYear, substanceValue];
-      // Add a new detail object if it doesn't exist
-      if (!substance.substancesDetails.some(detail => detail.substance === substanceValue)) {
-        updatedDetails = [
-          ...substance.substancesDetails,
-          {
-            substance: substanceValue,
-            ageFirstUse: '',
-            lastUseDate: '',
-            frequency: '',
-            method: '',
-            amount: '',
-            longestAbstinence: '',
-            previousTreatment: '',
-          }
-        ];
-      } else {
-        updatedDetails = [...substance.substancesDetails]; // No change if detail exists
-      }
+  const handleCheckboxChange = (field: Extract<keyof SubstanceUseData, 'usedSubstancesPastYear'>, value: string, checked: boolean) => {
+    const currentValues = (substance[field] as string[]) || [];
+    let newValues: string[];
+    if (checked) {
+      newValues = [...currentValues, value];
     } else {
-      updatedSubstances = substance.usedSubstancesPastYear.filter((s) => s !== substanceValue);
-      // Remove the corresponding detail object
-      updatedDetails = substance.substancesDetails.filter(detail => detail.substance !== substanceValue);
+      newValues = currentValues.filter((item) => item !== value);
     }
 
-    updateData({
-      substance: {
-        ...substance,
-        usedSubstancesPastYear: updatedSubstances,
-        substancesDetails: updatedDetails,
-      },
-    });
+    // Call updateData directly for the checkbox group
+    updateData(field, newValues);
+
+    // Add/Remove detail section based on checkbox
+    if (field === 'usedSubstancesPastYear') {
+      const currentDetails = [...substance.substancesDetails];
+      if (checked) {
+        const newDetail = {
+          substance: value,
+          ageFirstUse: '',
+          lastUseDate: '',
+          frequency: '',
+          method: '',
+          amount: '',
+          longestAbstinence: '',
+          previousTreatment: '',
+        };
+        const updatedDetails = [...currentDetails, newDetail];
+        updateData('substancesDetails', updatedDetails);
+      } else {
+        const updatedDetails = currentDetails.filter(detail => detail.substance !== value);
+        updateData('substancesDetails', updatedDetails);
+      }
+    }
   };
 
+  // Handler for substance detail changes
+  const handleSubstanceDetailChange = (substanceName: string, field: keyof SubstanceDetail, value: any) => {
+    const currentDetails = [...substance.substancesDetails];
+    const updatedDetails = currentDetails.map(detail => {
+      if (detail.substance === substanceName) {
+        return { ...detail, [field]: value };
+      }
+      return detail;
+    });
+    updateData('substancesDetails', updatedDetails);
+  };
+
+  // Handler for adding a new substance detail
+  const addEmptySubstanceDetail = (substanceName: string) => {
+    const newDetail = {
+      substance: substanceName,
+      ageFirstUse: '',
+      lastUseDate: '',
+      frequency: '',
+      method: '',
+      amount: '',
+      longestAbstinence: '',
+      previousTreatment: '',
+    };
+    const newDetails = [...substance.substancesDetails, newDetail];
+    updateData('substancesDetails', newDetails);
+  };
+
+  // Handler for removing a substance detail
+  const removeSubstanceDetail = (index: number) => {
+    const currentDetails = [...substance.substancesDetails];
+    currentDetails.splice(index, 1);
+    updateData('substancesDetails', currentDetails);
+  };
+
+  // Handler for treatment history changes
+  const handleTreatmentHistoryChange = (index: number, field: keyof SubstanceUseData['treatmentHistory'][0], value: any) => {
+    const currentHistory = [...(substance.treatmentHistory || [])];
+    const updatedHistory = currentHistory.map((entry, i) => {
+      if (i === index) {
+        return { ...entry, [field]: value };
+      }
+      return entry;
+    });
+    updateData('treatmentHistory', updatedHistory);
+  };
+
+  // Handler for adding a new treatment history entry
+  const addTreatmentHistory = () => {
+    const newEntry = {
+      type: '',
+      facilityName: '',
+      dates: '',
+      completed: '',
+    };
+    const newHistory = [...(substance.treatmentHistory || []), newEntry];
+    updateData('treatmentHistory', newHistory);
+  };
+
+  // Handler for removing a treatment history entry
+  const removeTreatmentHistory = (index: number) => {
+    const currentHistory = [...(substance.treatmentHistory || [])];
+    currentHistory.splice(index, 1);
+    updateData('treatmentHistory', currentHistory);
+  };
 
   // --- JSX Structure ---
   return (
@@ -183,7 +227,7 @@ export const SubstanceUseStep: React.FC<SubstanceUseStepProps> = ({
                   <Checkbox
                     id={`substance-${substanceOption.value}`}
                     checked={substance.usedSubstancesPastYear.includes(substanceOption.value)}
-                    onCheckedChange={(checked) => handleCheckboxChange(checked, substanceOption.value)}
+                    onCheckedChange={(checked) => handleCheckboxChange('usedSubstancesPastYear', substanceOption.value, checked)}
                   />
                   <Label htmlFor={`substance-${substanceOption.value}`} className="font-normal">
                     {substanceOption.label}
@@ -224,7 +268,7 @@ export const SubstanceUseStep: React.FC<SubstanceUseStepProps> = ({
                             id={`${substanceName}-ageFirstUse`}
                             name={`${substanceName}-ageFirstUse`} // Use unique name if needed, but handler uses substanceName/field
                             value={detail.ageFirstUse}
-                            onChange={(e) => handleChange(e, substanceName, 'ageFirstUse')}
+                            onChange={(e) => handleSubstanceDetailChange(substanceName, 'ageFirstUse', e.target.value)}
                             placeholder="e.g., 16"
                             type="number"
                           />
@@ -237,7 +281,7 @@ export const SubstanceUseStep: React.FC<SubstanceUseStepProps> = ({
                             id={`${substanceName}-lastUseDate`}
                             name={`${substanceName}-lastUseDate`}
                             value={detail.lastUseDate}
-                            onChange={(e) => handleChange(e, substanceName, 'lastUseDate')}
+                            onChange={(e) => handleSubstanceDetailChange(substanceName, 'lastUseDate', e.target.value)}
                             placeholder="e.g., MM/DD/YYYY or 'Yesterday'"
                             type="text" // Consider type="date" if strict format needed
                           />
@@ -250,7 +294,7 @@ export const SubstanceUseStep: React.FC<SubstanceUseStepProps> = ({
                             id={`${substanceName}-frequency`}
                             name={`${substanceName}-frequency`}
                             value={detail.frequency}
-                            onChange={(e) => handleChange(e, substanceName, 'frequency')}
+                            onChange={(e) => handleSubstanceDetailChange(substanceName, 'frequency', e.target.value)}
                             placeholder="e.g., Daily, 3x/week, Weekends"
                           />
                         </div>
@@ -262,7 +306,7 @@ export const SubstanceUseStep: React.FC<SubstanceUseStepProps> = ({
                              id={`${substanceName}-method`}
                              name={`${substanceName}-method`}
                              value={detail.method}
-                             onChange={(e) => handleChange(e, substanceName, 'method')}
+                             onChange={(e) => handleSubstanceDetailChange(substanceName, 'method', e.target.value)}
                              placeholder="e.g., Smoked, Injected, Oral"
                            />
                          </div>
@@ -274,7 +318,7 @@ export const SubstanceUseStep: React.FC<SubstanceUseStepProps> = ({
                              id={`${substanceName}-amount`}
                              name={`${substanceName}-amount`}
                              value={detail.amount}
-                             onChange={(e) => handleChange(e, substanceName, 'amount')}
+                             onChange={(e) => handleSubstanceDetailChange(substanceName, 'amount', e.target.value)}
                              placeholder="e.g., 1 gram, 6-pack, 1 pint"
                            />
                          </div>
@@ -286,7 +330,7 @@ export const SubstanceUseStep: React.FC<SubstanceUseStepProps> = ({
                             id={`${substanceName}-longestAbstinence`}
                             name={`${substanceName}-longestAbstinence`}
                             value={detail.longestAbstinence}
-                            onChange={(e) => handleChange(e, substanceName, 'longestAbstinence')}
+                            onChange={(e) => handleSubstanceDetailChange(substanceName, 'longestAbstinence', e.target.value)}
                             placeholder="e.g., 6 months, 2 years"
                           />
                         </div>
@@ -297,16 +341,7 @@ export const SubstanceUseStep: React.FC<SubstanceUseStepProps> = ({
                             <RadioGroup
                                 name={`${substanceName}-previousTreatment`} // Unique name per substance
                                 value={detail.previousTreatment}
-                                // Need a dedicated handler or modification to handleRadioChange
-                                // For now, using handleChange but might need adjustment
-                                onValueChange={(value) => updateData({
-                                    substance: {
-                                        ...substance,
-                                        substancesDetails: substance.substancesDetails.map(d =>
-                                            d.substance === substanceName ? { ...d, previousTreatment: value as 'Yes' | 'No' | '' } : d
-                                        )
-                                    }
-                                })}
+                                onValueChange={(value) => handleSubstanceDetailChange(substanceName, 'previousTreatment', value)}
                                 className="flex space-x-4"
                             >
                                 <div className="flex items-center space-x-2">
@@ -328,7 +363,7 @@ export const SubstanceUseStep: React.FC<SubstanceUseStepProps> = ({
                                     id={`${substanceName}-treatmentType`}
                                     name={`${substanceName}-treatmentType`}
                                     value={detail.treatmentType || ''}
-                                    onChange={(e) => handleChange(e, substanceName, 'treatmentType')}
+                                    onChange={(e) => handleSubstanceDetailChange(substanceName, 'treatmentType', e.target.value)}
                                     placeholder="e.g., Inpatient, Outpatient, Detox"
                                 />
                             </div>
@@ -387,7 +422,7 @@ export const SubstanceUseStep: React.FC<SubstanceUseStepProps> = ({
               min="1"
               max="10"
               value={substance.readinessToChange}
-              onChange={handleChange}
+              onChange={(e) => handleChange('readinessToChange', e.target.value)}
               className="w-24"
             />
           </div>
@@ -399,7 +434,7 @@ export const SubstanceUseStep: React.FC<SubstanceUseStepProps> = ({
               id="additionalComments"
               name="additionalComments"
               value={substance.additionalComments || ''}
-              onChange={handleChange}
+              onChange={(e) => handleChange('additionalComments', e.target.value)}
               placeholder="Any other relevant information..."
               rows={4}
             />

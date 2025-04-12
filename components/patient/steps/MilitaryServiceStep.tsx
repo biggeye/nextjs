@@ -2,7 +2,8 @@
 "use client"
 
 import React from 'react';
-import { PatientData } from '../PatientIntakeFlow'; // Import PatientData
+import { MilitaryServiceData } from '@/types/steps';
+import { PatientData } from '@/types/patient';
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -11,53 +12,77 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 
-// --- Types defined inline for now, consider moving to /types/steps.ts ---
-// TODO: Define the actual fields for MilitaryServiceData
-// TODO: Move this type to /types/steps.ts or similar (Ref MEMORY[172bf59a])
-export interface MilitaryServiceData { // Defined and Exported
-  servedInMilitary?: 'yes' | 'no';
-  branches?: Array<'army' | 'navy' | 'air_force' | 'marines' | 'coast_guard' | 'space_force'>;
-  activeDutyLength?: string; 
-  dischargeType?: 'honorable' | 'general' | 'other_than_honorable' | 'bad_conduct' | 'dishonorable' | 'uncharacterized' | 'medical' | 'other';
-  dischargeReason?: string;
-
-  impactedBenefits?: 'yes' | 'no'; 
-  dischargeUpgrade?: 'yes' | 'no' | 'attempted_unsuccessful' | 'in_progress';
-
-  combatExposure?: 'yes' | 'no';
-  conflictOrDeployment?: string; 
-
-  serviceInjuryOrCondition?: 'yes' | 'no';
-  injuryDetails?: string; 
-  receivedPurpleHeart?: 'yes' | 'no';
-
-  experiencedMST?: 'yes' | 'no';
-  mstDetails?: string; 
-
-  receivedMHServicesDuring?: 'yes' | 'no';
-  receivedMHServicesAfter?: 'yes' | 'no';
-  currentlyReceivingVAServices?: 'yes' | 'no';
-
-  difficultiesAdjusting?: 'yes' | 'no';
-  adjustmentChallenges?: Array<'employment' | 'relationships' | 'housing' | 'legal' | 'mental_health' | 'substance_use' | 'physical_health' | 'other'>;
-  adjustmentChallengesOther?: string;
-
-  increasedSubstanceUseDuringOrAfter?: 'yes' | 'no';
-
-  additionalMilitaryNotes?: string;
-}
-
-interface MilitaryServiceStepProps { // Defined props interface
-  militaryService: MilitaryServiceData; // Expect 'militaryService' prop
-  updateData: (newData: Partial<PatientData>) => void; // Expect correct updateData signature
+interface MilitaryServiceStepProps {
+  militaryService: MilitaryServiceData;
+  updateData: (field: keyof MilitaryServiceData, value: any) => void;
   onNext?: () => void;
   onBack?: () => void;
 }
-// --- End Types ---
+
+const dischargeTypesTriggeringReason = ['oth', 'bad_conduct', 'dishonorable'];
 
 export function MilitaryServiceStep({ militaryService, updateData, onNext, onBack }: MilitaryServiceStepProps) {
-  const handleChange = (field: keyof MilitaryServiceData, value: string | number | boolean) => {
-    updateData({ militaryService: { ...militaryService, [field]: value } } as Partial<PatientData>);
+
+  const handleChange = (field: keyof MilitaryServiceData, value: any) => {
+    // Update the primary field that changed
+    updateData(field, value);
+
+    // --- Auto-clear conditional fields --- 
+    if (field === 'servedInMilitary' && value === 'no') {
+      // Clear all other military fields if servedInMilitary is 'no'
+      // This might be extensive, consider which fields *specifically* need clearing
+      const fieldsToClear: (keyof MilitaryServiceData)[] = ['branchOfService', 'lengthOfService', 'combatExposure', 'combatConflict', 'combatConflictOther', 'combatTroubledByExperience', 'rankAtDischarge', 'jobMOS', 'dischargeType', 'dischargeReason', 'dischargeReasonOther', 'dischargeImpactOnBenefits', 'dischargeTriedUpgrade', 'dischargeEmotionalImpact', 'injuredDuringService', 'militarySexualTrauma', 'mstType', 'mstReported', 'mstReportTakenSeriously', 'mstRetaliation', 'mstImpactToday', 'mstWantSupport', 'experiencedLossDuringService', 'lossRelatedPtsd', 'receivedMHServicesDuringService', 'receivingVAServices', 'substanceUseIncrease', 'postServiceSubstances', 'substanceUseAffectedCareer', 'soughtSubstanceTreatmentPostService', 'substanceUseContributedIssues', 'additionalMilitaryInfo'];
+      fieldsToClear.forEach(f => updateData(f, undefined)); // Or appropriate default values
+    }
+
+    if (field === 'combatExposure' && value === 'no') {
+      updateData('combatConflict', []);
+      updateData('combatConflictOther', undefined);
+      updateData('combatTroubledByExperience', undefined);
+    }
+
+    if (field === 'combatConflict' && !value.includes('other')) {
+      updateData('combatConflictOther', undefined);
+    }
+
+    if (field === 'dischargeType' && !dischargeTypesTriggeringReason.includes(value)) {
+      updateData('dischargeReason', []);
+      updateData('dischargeReasonOther', undefined);
+    }
+
+    if (field === 'dischargeReason' && !value.includes('other')) {
+      updateData('dischargeReasonOther', undefined);
+    }
+
+    if (field === 'dischargeImpactOnBenefits' && value !== 'yes') {
+      updateData('dischargeTriedUpgrade', undefined);
+    }
+
+    if (field === 'militarySexualTrauma' && value === 'no') {
+      updateData('mstType', []);
+      updateData('mstReported', undefined);
+      updateData('mstReportTakenSeriously', undefined);
+      updateData('mstRetaliation', undefined);
+      updateData('mstImpactToday', undefined);
+      updateData('mstWantSupport', undefined);
+    }
+
+    if (field === 'mstReported' && value === 'no') {
+      updateData('mstReportTakenSeriously', undefined);
+      updateData('mstRetaliation', undefined); // Also clear retaliation if not reported
+    }
+
+    if (field === 'experiencedLossDuringService' && value === 'no') {
+      updateData('lossRelatedPtsd', undefined);
+    }
+
+    if (field === 'substanceUseIncrease' && value === 'no') {
+      updateData('postServiceSubstances', []);
+      updateData('substanceUseAffectedCareer', undefined);
+      updateData('soughtSubstanceTreatmentPostService', undefined);
+      updateData('substanceUseContributedIssues', undefined);
+    }
+    // --- End Auto-clear --- 
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -72,32 +97,43 @@ export function MilitaryServiceStep({ militaryService, updateData, onNext, onBac
   const handleCheckboxChange = (field: keyof MilitaryServiceData, value: string, checked: boolean) => {
     const currentValues = (militaryService[field] as string[]) || [];
     let newValues: string[];
-
     if (checked) {
       newValues = [...new Set([...currentValues, value])];
     } else {
       newValues = currentValues.filter((v) => v !== value);
     }
-    updateData({ militaryService: { ...militaryService, [field]: newValues } } as Partial<PatientData>);
+    handleChange(field, newValues);
   };
 
-  const renderRadioOption = (groupName: keyof MilitaryServiceData, value: string, label: string) => (
+  const renderRadioOption = (groupName: keyof MilitaryServiceData, value: string, label: string, disabled: boolean = false) => (
     <div className="flex items-center space-x-2">
-      <RadioGroupItem value={value} id={`${groupName}-${value}`} />
-      <Label htmlFor={`${groupName}-${value}`}>{label}</Label>
+      <RadioGroupItem value={value} id={`${groupName}-${value}`} disabled={disabled} />
+      <Label htmlFor={`${groupName}-${value}`} className={disabled ? 'text-muted-foreground' : ''}>{label}</Label>
     </div>
   );
 
-  const renderCheckboxOption = (fieldName: keyof MilitaryServiceData, value: string, label: string) => (
+  const renderCheckboxOption = (fieldName: keyof MilitaryServiceData, value: string, label: string, disabled: boolean = false) => (
     <div className="flex items-center space-x-2">
       <Checkbox
         id={`${fieldName}-${value}`}
         checked={((militaryService[fieldName] as string[]) || []).includes(value)}
         onCheckedChange={(checked) => handleCheckboxChange(fieldName, value, checked as boolean)}
+        disabled={disabled}
       />
-      <Label htmlFor={`${fieldName}-${value}`}>{label}</Label>
+      <Label htmlFor={`${fieldName}-${value}`} className={disabled ? 'text-muted-foreground' : ''}>{label}</Label>
     </div>
   );
+
+  const served = militaryService.servedInMilitary === 'yes';
+  const hadCombatExposure = served && militaryService.combatExposure === 'yes';
+  const showCombatConflictOther = hadCombatExposure && militaryService.combatConflict?.includes('other');
+  const showDischargeReason = served && dischargeTypesTriggeringReason.includes(militaryService.dischargeType || '');
+  const showDischargeReasonOther = showDischargeReason && militaryService.dischargeReason?.includes('other');
+  const showDischargeUpgrade = served && militaryService.dischargeImpactOnBenefits === 'yes';
+  const experiencedMST = served && militaryService.militarySexualTrauma === 'yes';
+  const reportedMST = experiencedMST && militaryService.mstReported === 'yes';
+  const experiencedLoss = served && militaryService.experiencedLossDuringService === 'yes';
+  const hadSubstanceIncrease = served && militaryService.substanceUseIncrease === 'yes';
 
   return (
     <Card>
@@ -107,7 +143,7 @@ export function MilitaryServiceStep({ militaryService, updateData, onNext, onBac
       <CardContent className="space-y-8">
 
         <div className="space-y-2">
-          <Label className="font-medium">Have you ever served in the U.S. Armed Forces (Active Duty, Reserves, or National Guard)?</Label>
+          <Label className="font-medium">Have you ever served in the military (Armed Forces, Reserves, or National Guard)?</Label>
           <RadioGroup
             value={militaryService.servedInMilitary || ''}
             onValueChange={(value) => handleRadioChange('servedInMilitary', value)}
@@ -118,80 +154,40 @@ export function MilitaryServiceStep({ militaryService, updateData, onNext, onBac
           </RadioGroup>
         </div>
 
-        {militaryService.servedInMilitary === 'yes' && (
-          <div className="space-y-6 rounded-md border p-4">
+        {served && (
+          <div className="space-y-6 rounded-md border p-4 animate-fadeIn">
 
             <div className="space-y-2">
-              <Label className="font-medium">Branch(es) of Service:</Label>
+              <Label className="font-medium">Branch of Service:</Label>
               <p className="text-sm text-muted-foreground">Select all that apply:</p>
               <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-                {renderCheckboxOption('branches', 'army', 'Army')}
-                {renderCheckboxOption('branches', 'navy', 'Navy')}
-                {renderCheckboxOption('branches', 'air_force', 'Air Force')}
-                {renderCheckboxOption('branches', 'marines', 'Marine Corps')}
-                {renderCheckboxOption('branches', 'coast_guard', 'Coast Guard')}
-                {renderCheckboxOption('branches', 'space_force', 'Space Force')}
+                {renderCheckboxOption('branchOfService', 'army', 'Army')}
+                {renderCheckboxOption('branchOfService', 'navy', 'Navy')}
+                {renderCheckboxOption('branchOfService', 'air_force', 'Air Force')}
+                {renderCheckboxOption('branchOfService', 'marines', 'Marines')}
+                {renderCheckboxOption('branchOfService', 'coast_guard', 'Coast Guard')}
+                {renderCheckboxOption('branchOfService', 'national_guard_reserves', 'National Guard/Reserves')}
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="activeDutyLength">Approximate Length of Active Duty Service:</Label>
-              <Input id="activeDutyLength" name="activeDutyLength" value={militaryService.activeDutyLength || ''} onChange={handleInputChange} placeholder="e.g., 4 years, 8 months" />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="font-medium">Type of Discharge:</Label>
+              <Label className="font-medium">Length of Service:</Label>
               <RadioGroup
-                value={militaryService.dischargeType || ''}
-                onValueChange={(value) => handleRadioChange('dischargeType', value)}
+                value={militaryService.lengthOfService || ''}
+                onValueChange={(value) => handleRadioChange('lengthOfService', value)}
                 className="grid grid-cols-2 gap-2 md:grid-cols-3"
               >
-                {renderRadioOption('dischargeType', 'honorable', 'Honorable')}
-                {renderRadioOption('dischargeType', 'general', 'General (Under Honorable Conditions)')}
-                {renderRadioOption('dischargeType', 'other_than_honorable', 'Other Than Honorable (OTH)')}
-                {renderRadioOption('dischargeType', 'bad_conduct', 'Bad Conduct')}
-                {renderRadioOption('dischargeType', 'dishonorable', 'Dishonorable')}
-                {renderRadioOption('dischargeType', 'uncharacterized', 'Uncharacterized (Entry Level)')}
-                {renderRadioOption('dischargeType', 'medical', 'Medical')}
-                {renderRadioOption('dischargeType', 'other', 'Other/Unknown')}
+                {renderRadioOption('lengthOfService', '<1', '<1 year')}
+                {renderRadioOption('lengthOfService', '1-3', '1–3 years')}
+                {renderRadioOption('lengthOfService', '3-5', '3–5 years')}
+                {renderRadioOption('lengthOfService', '5-10', '5–10 years')}
+                {renderRadioOption('lengthOfService', '10-20', '10–20 years')}
+                {renderRadioOption('lengthOfService', '>20', '>20 years')}
               </RadioGroup>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="dischargeReason">Reason for Discharge (if known and comfortable sharing):</Label>
-              <Textarea id="dischargeReason" name="dischargeReason" value={militaryService.dischargeReason || ''} onChange={handleInputChange} />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="font-medium">Has your discharge status impacted your access to VA benefits (e.g., healthcare, GI Bill)?</Label>
-              <RadioGroup
-                value={militaryService.impactedBenefits || ''}
-                onValueChange={(value) => handleRadioChange('impactedBenefits', value)}
-                className="flex space-x-4"
-              >
-                {renderRadioOption('impactedBenefits', 'yes', 'Yes')}
-                {renderRadioOption('impactedBenefits', 'no', 'No')}
-                {renderRadioOption('impactedBenefits', 'unsure', 'Unsure')}
-              </RadioGroup>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="font-medium">Have you attempted or are you considering a discharge upgrade?</Label>
-              <RadioGroup
-                value={militaryService.dischargeUpgrade || ''}
-                onValueChange={(value) => handleRadioChange('dischargeUpgrade', value)}
-                className="grid grid-cols-2 gap-2 md:grid-cols-3"
-              >
-                {renderRadioOption('dischargeUpgrade', 'yes', 'Yes, successfully')}
-                {renderRadioOption('dischargeUpgrade', 'attempted_unsuccessful', 'Yes, attempted unsuccessfully')}
-                {renderRadioOption('dischargeUpgrade', 'in_progress', 'Yes, currently in progress')}
-                {renderRadioOption('dischargeUpgrade', 'considering', 'Considering it')}
-                {renderRadioOption('dischargeUpgrade', 'no', 'No')}
-              </RadioGroup>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="font-medium">Were you deployed to a combat zone or exposed to hostile fire/events?</Label>
+              <Label className="font-medium">Did you serve in a combat zone or experience hostile fire?</Label>
               <RadioGroup
                 value={militaryService.combatExposure || ''}
                 onValueChange={(value) => handleRadioChange('combatExposure', value)}
@@ -201,162 +197,366 @@ export function MilitaryServiceStep({ militaryService, updateData, onNext, onBac
                 {renderRadioOption('combatExposure', 'no', 'No')}
               </RadioGroup>
             </div>
-            {militaryService.combatExposure === 'yes' && (
-              <div className="space-y-2 border-l-2 border-muted pl-6">
-                <Label htmlFor="conflictOrDeployment">Conflict(s) or Deployment Location(s):</Label>
-                <Input id="conflictOrDeployment" name="conflictOrDeployment" value={militaryService.conflictOrDeployment || ''} onChange={handleInputChange} placeholder="e.g., OIF/OEF, Vietnam, Persian Gulf" />
-              </div>
-            )}
 
-            <div className="space-y-2">
-              <Label className="font-medium">Did you sustain any significant injuries or develop health conditions during your service (physical or mental)?</Label>
-              <RadioGroup
-                value={militaryService.serviceInjuryOrCondition || ''}
-                onValueChange={(value) => handleRadioChange('serviceInjuryOrCondition', value)}
-                className="flex space-x-4"
-              >
-                {renderRadioOption('serviceInjuryOrCondition', 'yes', 'Yes')}
-                {renderRadioOption('serviceInjuryOrCondition', 'no', 'No')}
-              </RadioGroup>
-            </div>
-            {militaryService.serviceInjuryOrCondition === 'yes' && (
-              <div className="space-y-4 border-l-2 border-muted pl-6">
+            {hadCombatExposure && (
+              <div className="ml-6 space-y-4 border-l-2 pl-4 border-dashed">
                 <div className="space-y-2">
-                  <Label htmlFor="injuryDetails">Please describe:</Label>
-                  <Textarea id="injuryDetails" name="injuryDetails" value={militaryService.injuryDetails || ''} onChange={handleInputChange} placeholder="e.g., TBI, PTSD, chronic back pain, hearing loss" />
+                  <Label className="font-medium">Which conflict/war?</Label>
+                   <p className="text-sm text-muted-foreground">Select all that apply:</p>
+                   <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+                      {renderCheckboxOption('combatConflict', 'vietnam', 'Vietnam')}
+                      {renderCheckboxOption('combatConflict', 'gulf_war', 'Gulf War')}
+                      {renderCheckboxOption('combatConflict', 'iraq_afghanistan', 'Iraq/Afghanistan')}
+                      {renderCheckboxOption('combatConflict', 'other', 'Other')}
+                    </div>
+                    {showCombatConflictOther && (
+                       <Input name="combatConflictOther" value={militaryService.combatConflictOther || ''} onChange={handleInputChange} placeholder="Specify other conflict" className="mt-2" />
+                    )}
+                </div>
+                 <div className="space-y-2">
+                    <Label className="font-medium">Are you currently troubled by experiences from combat (e.g. nightmares, flashbacks)?</Label>
+                    <RadioGroup
+                      value={militaryService.combatTroubledByExperience || ''}
+                      onValueChange={(value) => handleRadioChange('combatTroubledByExperience', value)}
+                      className="flex space-x-4"
+                    >
+                        {renderRadioOption('combatTroubledByExperience', 'yes', 'Yes')}
+                        {renderRadioOption('combatTroubledByExperience', 'no', 'No')}
+                    </RadioGroup>
+                 </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="rankAtDischarge">Rank at Discharge:</Label>
+                    <Input id="rankAtDischarge" name="rankAtDischarge" value={militaryService.rankAtDischarge || ''} onChange={handleInputChange} />
                 </div>
                 <div className="space-y-2">
-                  <Label className="font-medium">Did you receive a Purple Heart?</Label>
-                  <RadioGroup
-                    value={militaryService.receivedPurpleHeart || ''}
-                    onValueChange={(value) => handleRadioChange('receivedPurpleHeart', value)}
-                    className="flex space-x-4"
-                  >
-                    {renderRadioOption('receivedPurpleHeart', 'yes', 'Yes')}
-                    {renderRadioOption('receivedPurpleHeart', 'no', 'No')}
-                  </RadioGroup>
+                    <Label htmlFor="jobMOS">Job/MOS:</Label>
+                    <Input id="jobMOS" name="jobMOS" value={militaryService.jobMOS || ''} onChange={handleInputChange} />
                 </div>
-              </div>
-            )}
-
-            <div className="space-y-2 rounded-md border border-warning/50 bg-warning/10 p-4">
-              <Label className="font-medium text-warning-foreground">Did you experience any unwanted sexual contact, sexual harassment, or assault during your military service (Military Sexual Trauma - MST)?</Label>
-              <p className="text-sm text-warning-foreground/80">Answering this is optional, but helps us provide appropriate support.</p>
-              <RadioGroup
-                value={militaryService.experiencedMST || ''}
-                onValueChange={(value) => handleRadioChange('experiencedMST', value)}
-                className="flex space-x-4"
-              >
-                {renderRadioOption('experiencedMST', 'yes', 'Yes')}
-                {renderRadioOption('experiencedMST', 'no', 'No')}
-                {renderRadioOption('experiencedMST', 'prefer_not_to_say', 'Prefer not to say')}
-              </RadioGroup>
-            </div>
-            {militaryService.experiencedMST === 'yes' && (
-              <div className="space-y-2 border-l-2 border-warning/50 pl-6">
-                <Label htmlFor="mstDetails">If you are comfortable, you may provide brief details (optional):</Label>
-                <Textarea id="mstDetails" name="mstDetails" value={militaryService.mstDetails || ''} onChange={handleInputChange} placeholder="Reporting status, type of incident (optional)"/>
-              </div>
-            )}
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label className="font-medium">Did you receive any mental health services (counseling, medication) while on active duty?</Label>
-                <RadioGroup
-                  value={militaryService.receivedMHServicesDuring || ''}
-                  onValueChange={(value) => handleRadioChange('receivedMHServicesDuring', value)}
-                  className="flex space-x-4"
-                >
-                  {renderRadioOption('receivedMHServicesDuring', 'yes', 'Yes')}
-                  {renderRadioOption('receivedMHServicesDuring', 'no', 'No')}
-                </RadioGroup>
-              </div>
-              <div className="space-y-2">
-                <Label className="font-medium">Have you received mental health services since leaving the military?</Label>
-                <RadioGroup
-                  value={militaryService.receivedMHServicesAfter || ''}
-                  onValueChange={(value) => handleRadioChange('receivedMHServicesAfter', value)}
-                  className="flex space-x-4"
-                >
-                  {renderRadioOption('receivedMHServicesAfter', 'yes', 'Yes')}
-                  {renderRadioOption('receivedMHServicesAfter', 'no', 'No')}
-                </RadioGroup>
-              </div>
-              <div className="space-y-2">
-                <Label className="font-medium">Are you currently receiving any services from the VA (Veterans Affairs)?</Label>
-                <RadioGroup
-                  value={militaryService.currentlyReceivingVAServices || ''}
-                  onValueChange={(value) => handleRadioChange('currentlyReceivingVAServices', value)}
-                  className="flex space-x-4"
-                >
-                  {renderRadioOption('currentlyReceivingVAServices', 'yes', 'Yes')}
-                  {renderRadioOption('currentlyReceivingVAServices', 'no', 'No')}
-                </RadioGroup>
-              </div>
             </div>
 
             <div className="space-y-2">
-              <Label className="font-medium">Have you experienced difficulties adjusting to civilian life after your service?</Label>
+              <Label className="font-medium">Discharge Type:</Label>
               <RadioGroup
-                value={militaryService.difficultiesAdjusting || ''}
-                onValueChange={(value) => handleRadioChange('difficultiesAdjusting', value)}
-                className="flex space-x-4"
+                value={militaryService.dischargeType || ''}
+                onValueChange={(value) => handleRadioChange('dischargeType', value)}
+                className="grid grid-cols-2 gap-2 md:grid-cols-3"
               >
-                {renderRadioOption('difficultiesAdjusting', 'yes', 'Yes')}
-                {renderRadioOption('difficultiesAdjusting', 'no', 'No')}
+                {renderRadioOption('dischargeType', 'honorable', 'Honorable')}
+                {renderRadioOption('dischargeType', 'general', 'General')}
+                {renderRadioOption('dischargeType', 'oth', 'Other-than-honorable (OTH)')}
+                {renderRadioOption('dischargeType', 'bad_conduct', 'Bad conduct')}
+                {renderRadioOption('dischargeType', 'dishonorable', 'Dishonorable')}
+                {renderRadioOption('dischargeType', 'active_reserve', 'Still Active/Reserve')}
               </RadioGroup>
             </div>
-            {militaryService.difficultiesAdjusting === 'yes' && (
-              <div className="space-y-2 border-l-2 border-muted pl-6">
-                <Label className="font-medium">In which areas have you faced challenges?</Label>
-                <p className="text-sm text-muted-foreground">Select all that apply:</p>
-                <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-                  {renderCheckboxOption('adjustmentChallenges', 'employment', 'Finding/Keeping Employment')}
-                  {renderCheckboxOption('adjustmentChallenges', 'relationships', 'Relationships (Family/Social)')}
-                  {renderCheckboxOption('adjustmentChallenges', 'housing', 'Housing/Homelessness')}
-                  {renderCheckboxOption('adjustmentChallenges', 'legal', 'Legal Issues')}
-                  {renderCheckboxOption('adjustmentChallenges', 'mental_health', 'Mental Health (e.g., PTSD, depression)')}
-                  {renderCheckboxOption('adjustmentChallenges', 'substance_use', 'Substance Use')}
-                  {renderCheckboxOption('adjustmentChallenges', 'physical_health', 'Physical Health Issues')}
-                  {renderCheckboxOption('adjustmentChallenges', 'other', 'Other')}
-                </div>
-                { (militaryService.adjustmentChallenges || []).includes('other') && (
-                  <div className="mt-2 space-y-1">
-                    <Label htmlFor="adjustmentChallengesOther">Please specify "Other":</Label>
-                    <Input id="adjustmentChallengesOther" name="adjustmentChallengesOther" value={militaryService.adjustmentChallengesOther || ''} onChange={handleInputChange} />
-                  </div>
-                )}
-              </div>
+ 
+            {showDischargeReason && (
+                 <div className="ml-6 space-y-4 border-l-2 pl-4 border-dashed">
+                    <Label className="font-medium">Was your discharge related to any of the following?</Label>
+                    <p className="text-sm text-muted-foreground">Select all that apply:</p>
+                    <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+                        {renderCheckboxOption('dischargeReason', 'substance_use', 'Substance use')}
+                        {renderCheckboxOption('dischargeReason', 'mental_health', 'Mental health')}
+                        {renderCheckboxOption('dischargeReason', 'misconduct', 'Misconduct')}
+                        {renderCheckboxOption('dischargeReason', 'legal_issues', 'Legal issues')}
+                        {renderCheckboxOption('dischargeReason', 'medical', 'Medical reasons')}
+                        {renderCheckboxOption('dischargeReason', 'other', 'Other')}
+                    </div>
+                    {showDischargeReasonOther && (
+                        <Input name="dischargeReasonOther" value={militaryService.dischargeReasonOther || ''} onChange={handleInputChange} placeholder="Specify other reason" className="mt-2" />
+                    )}
+                 </div>
             )}
 
             <div className="space-y-2">
-              <Label className="font-medium">Did you notice an increase in your substance use (alcohol or drugs) during or after your military service?</Label>
+              <Label className="font-medium">Did your discharge status impact your benefits (e.g. VA benefits eligibility)?</Label>
               <RadioGroup
-                value={militaryService.increasedSubstanceUseDuringOrAfter || ''}
-                onValueChange={(value) => handleRadioChange('increasedSubstanceUseDuringOrAfter', value)}
+                value={militaryService.dischargeImpactOnBenefits || ''}
+                onValueChange={(value) => handleRadioChange('dischargeImpactOnBenefits', value)}
                 className="flex space-x-4"
               >
-                {renderRadioOption('increasedSubstanceUseDuringOrAfter', 'yes', 'Yes')}
-                {renderRadioOption('increasedSubstanceUseDuringOrAfter', 'no', 'No')}
+                {renderRadioOption('dischargeImpactOnBenefits', 'yes', 'Yes')}
+                {renderRadioOption('dischargeImpactOnBenefits', 'no', 'No')}
+                {renderRadioOption('dischargeImpactOnBenefits', 'na', 'N/A')}
               </RadioGroup>
             </div>
 
-            <div className="space-y-2 pt-4">
-              <Label htmlFor="additionalMilitaryNotes">Is there anything else about your military experience you feel is important for your treatment provider to know?</Label>
-              <Textarea id="additionalMilitaryNotes" name="additionalMilitaryNotes" value={militaryService.additionalMilitaryNotes || ''} onChange={handleInputChange} rows={3} />
+            {showDischargeUpgrade && (
+                 <div className="ml-6 space-y-2 border-l-2 pl-4 border-dashed">
+                    <Label className="font-medium">Have you tried to get a discharge upgrade or appeal?</Label>
+                    <RadioGroup
+                        value={militaryService.dischargeTriedUpgrade || ''}
+                        onValueChange={(value) => handleRadioChange('dischargeTriedUpgrade', value)}
+                        className="flex space-x-4"
+                    >
+                        {renderRadioOption('dischargeTriedUpgrade', 'yes', 'Yes')}
+                        {renderRadioOption('dischargeTriedUpgrade', 'no', 'No')}
+                    </RadioGroup>
+                 </div>
+            )}
+
+            <div className="space-y-2">
+              <Label className="font-medium">Did the circumstances of your discharge cause you emotional difficulty or distress?</Label>
+              <RadioGroup
+                value={militaryService.dischargeEmotionalImpact || ''}
+                onValueChange={(value) => handleRadioChange('dischargeEmotionalImpact', value)}
+                className="flex space-x-4"
+              >
+                {renderRadioOption('dischargeEmotionalImpact', 'yes', 'Yes')}
+                {renderRadioOption('dischargeEmotionalImpact', 'no', 'No')}
+              </RadioGroup>
             </div>
 
-          </div>
+            <h3 className="text-lg font-semibold pt-4 border-t mt-4">Service-Related Stressors</h3>
+
+             <div className="space-y-2">
+              <Label className="font-medium">Were you ever injured during service?</Label>
+              <RadioGroup
+                value={militaryService.injuredDuringService || ''}
+                onValueChange={(value) => handleRadioChange('injuredDuringService', value)}
+                className="flex space-x-4"
+              >
+                {renderRadioOption('injuredDuringService', 'yes', 'Yes')}
+                {renderRadioOption('injuredDuringService', 'no', 'No')}
+              </RadioGroup>
+            </div>
+
+             <div className="space-y-2">
+              <Label className="font-medium">Did you experience any form of harassment or unwanted sexual attention in the service (military sexual trauma)?</Label>
+              <RadioGroup
+                value={militaryService.militarySexualTrauma || ''}
+                onValueChange={(value) => handleRadioChange('militarySexualTrauma', value)}
+                className="flex space-x-4"
+              >
+                {renderRadioOption('militarySexualTrauma', 'yes', 'Yes')}
+                {renderRadioOption('militarySexualTrauma', 'no', 'No')}
+              </RadioGroup>
+            </div>
+
+            {experiencedMST && (
+              <div className="ml-6 space-y-4 border-l-2 pl-4 border-dashed">
+                 <div className="space-y-2">
+                  <Label className="font-medium">Type of harassment/trauma:</Label>
+                  <p className="text-sm text-muted-foreground">Select all that apply:</p>
+                    <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+                        {renderCheckboxOption('mstType', 'sexual', 'Sexual')}
+                        {renderCheckboxOption('mstType', 'racial_ethnic', 'Racial/Ethnic')}
+                        {renderCheckboxOption('mstType', 'hazing_bullying', 'Hazing/Bullying')}
+                        {renderCheckboxOption('mstType', 'physical_assault', 'Physical assault')}
+                        {renderCheckboxOption('mstType', 'other', 'Other')}
+                        {/* TODO: Add 'Other' text input if 'other' selected */} 
+                    </div>
+                </div>
+
+                <div className="space-y-2">
+                    <Label className="font-medium">Did you report the incident(s)?</Label>
+                    <RadioGroup
+                        value={militaryService.mstReported || ''}
+                        onValueChange={(value) => handleRadioChange('mstReported', value)}
+                        className="flex space-x-4"
+                    >
+                        {renderRadioOption('mstReported', 'yes', 'Yes')}
+                        {renderRadioOption('mstReported', 'no', 'No')}
+                    </RadioGroup>
+                </div>
+ 
+                {reportedMST && (
+                    <div className="ml-6 space-y-2 border-l-2 pl-4 border-dashed">
+                        <Label className="font-medium">Were the reports taken seriously?</Label>
+                        <RadioGroup
+                            value={militaryService.mstReportTakenSeriously || ''}
+                            onValueChange={(value) => handleRadioChange('mstReportTakenSeriously', value)}
+                            className="flex space-x-4"
+                        >
+                            {renderRadioOption('mstReportTakenSeriously', 'yes', 'Yes')}
+                            {renderRadioOption('mstReportTakenSeriously', 'no', 'No')}
+                            {renderRadioOption('mstReportTakenSeriously', 'na', 'N/A')}
+                        </RadioGroup>
+                    </div>
+                 )}
+
+                 <div className="space-y-2">
+                    <Label className="font-medium">Did you experience any retaliation or negative consequences after reporting?</Label>
+                    <RadioGroup
+                        value={militaryService.mstRetaliation || ''}
+                        onValueChange={(value) => handleRadioChange('mstRetaliation', value)}
+                        className="flex space-x-4"
+                    >
+                        {renderRadioOption('mstRetaliation', 'yes', 'Yes', !reportedMST)} 
+                        {renderRadioOption('mstRetaliation', 'no', 'No', !reportedMST)}
+                        {renderRadioOption('mstRetaliation', 'na', 'N/A', !reportedMST)}
+                    </RadioGroup>
+                 </div>
+
+                 <div className="space-y-2">
+                    <Label className="font-medium">Do these experiences impact your mental health today?</Label>
+                    <RadioGroup
+                        value={militaryService.mstImpactToday || ''}
+                        onValueChange={(value) => handleRadioChange('mstImpactToday', value)}
+                        className="flex space-x-4"
+                    >
+                        {renderRadioOption('mstImpactToday', 'yes', 'Yes')}
+                        {renderRadioOption('mstImpactToday', 'no', 'No')}
+                    </RadioGroup>
+                 </div>
+
+                 <div className="space-y-2">
+                    <Label className="font-medium">Would you like counseling or support for these experiences now?</Label>
+                    <RadioGroup
+                        value={militaryService.mstWantSupport || ''}
+                        onValueChange={(value) => handleRadioChange('mstWantSupport', value)}
+                        className="flex space-x-4"
+                    >
+                        {renderRadioOption('mstWantSupport', 'yes', 'Yes')}
+                        {renderRadioOption('mstWantSupport', 'no', 'No')}
+                    </RadioGroup>
+                 </div>
+              </div>
+            )}
+
+            <div className="space-y-2 pt-4 border-t mt-4">
+              <Label className="font-medium">Did you lose any close comrades or experience other significant trauma/loss during service?</Label>
+              <RadioGroup
+                value={militaryService.experiencedLossDuringService || ''}
+                onValueChange={(value) => handleRadioChange('experiencedLossDuringService', value)}
+                className="flex space-x-4"
+              >
+                {renderRadioOption('experiencedLossDuringService', 'yes', 'Yes')}
+                {renderRadioOption('experiencedLossDuringService', 'no', 'No')}
+              </RadioGroup>
+            </div>
+
+            {experiencedLoss && (
+                 <div className="ml-6 space-y-2 border-l-2 pl-4 border-dashed">
+                    <Label className="font-medium">Do you have PTSD symptoms related to those events (e.g. intrusive memories, hypervigilance)?</Label>
+                    <RadioGroup
+                        value={militaryService.lossRelatedPtsd || ''}
+                        onValueChange={(value) => handleRadioChange('lossRelatedPtsd', value)}
+                        className="flex space-x-4"
+                    >
+                        {renderRadioOption('lossRelatedPtsd', 'yes', 'Yes')}
+                        {renderRadioOption('lossRelatedPtsd', 'no', 'No')}
+                    </RadioGroup>
+                 </div>
+            )}
+
+            <h3 className="text-lg font-semibold pt-4 border-t mt-4">Health Services</h3>
+
+            <div className="space-y-2">
+              <Label className="font-medium">Did you receive any mental health services during your military service?</Label>
+              <RadioGroup
+                value={militaryService.receivedMHServicesDuringService || ''}
+                onValueChange={(value) => handleRadioChange('receivedMHServicesDuringService', value)}
+                className="flex space-x-4"
+              >
+                {renderRadioOption('receivedMHServicesDuringService', 'yes', 'Yes')}
+                {renderRadioOption('receivedMHServicesDuringService', 'no', 'No')}
+              </RadioGroup>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="font-medium">Are you currently receiving any services through the VA (Veterans Affairs) for mental health or substance use?</Label>
+              <RadioGroup
+                value={militaryService.receivingVAServices || ''}
+                onValueChange={(value) => handleRadioChange('receivingVAServices', value)}
+                className="flex space-x-4"
+              >
+                {renderRadioOption('receivingVAServices', 'yes', 'Yes')}
+                {renderRadioOption('receivingVAServices', 'no', 'No')}
+              </RadioGroup>
+            </div>
+
+            <h3 className="text-lg font-semibold pt-4 border-t mt-4">Substance Use in Military</h3>
+
+             <div className="space-y-2">
+              <Label className="font-medium">Did your alcohol or substance use increase during or after your service?</Label>
+              <RadioGroup
+                value={militaryService.substanceUseIncrease || ''}
+                onValueChange={(value) => handleRadioChange('substanceUseIncrease', value)}
+                className="flex space-x-4"
+              >
+                {renderRadioOption('substanceUseIncrease', 'yes', 'Yes')}
+                {renderRadioOption('substanceUseIncrease', 'no', 'No')}
+              </RadioGroup>
+            </div>
+
+            {hadSubstanceIncrease && (
+              <div className="ml-6 space-y-4 border-l-2 pl-4 border-dashed">
+                 <div className="space-y-2">
+                  <Label className="font-medium">Substances involved (post-service):</Label>
+                  <p className="text-sm text-muted-foreground">Select all that apply:</p>
+                    <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+                        {renderCheckboxOption('postServiceSubstances', 'alcohol', 'Alcohol')}
+                        {renderCheckboxOption('postServiceSubstances', 'cannabis', 'Cannabis')}
+                        {renderCheckboxOption('postServiceSubstances', 'opioids', 'Opioids')}
+                        {renderCheckboxOption('postServiceSubstances', 'stimulants', 'Stimulants')}
+                        {renderCheckboxOption('postServiceSubstances', 'prescription_misuse', 'Prescription misuse')}
+                        {renderCheckboxOption('postServiceSubstances', 'other', 'Other')}
+                         {/* TODO: Add 'Other' text input if 'other' selected */} 
+                    </div>
+                </div>
+
+                 <div className="space-y-2">
+                    <Label className="font-medium">Did substance use affect your military career or lead to disciplinary actions?</Label>
+                    <RadioGroup
+                        value={militaryService.substanceUseAffectedCareer || ''}
+                        onValueChange={(value) => handleRadioChange('substanceUseAffectedCareer', value)}
+                        className="flex space-x-4"
+                    >
+                        {renderRadioOption('substanceUseAffectedCareer', 'yes', 'Yes')}
+                        {renderRadioOption('substanceUseAffectedCareer', 'no', 'No')}
+                    </RadioGroup>
+                 </div>
+
+                 <div className="space-y-2">
+                    <Label className="font-medium">Since discharge, have you sought treatment for substance use (through the VA or elsewhere)?</Label>
+                    <RadioGroup
+                        value={militaryService.soughtSubstanceTreatmentPostService || ''}
+                        onValueChange={(value) => handleRadioChange('soughtSubstanceTreatmentPostService', value)}
+                        className="flex space-x-4"
+                    >
+                        {renderRadioOption('soughtSubstanceTreatmentPostService', 'yes', 'Yes')}
+                        {renderRadioOption('soughtSubstanceTreatmentPostService', 'no', 'No')}
+                    </RadioGroup>
+                 </div>
+
+                 <div className="space-y-2">
+                    <Label className="font-medium">Did substance use contribute to any legal or family issues post-service?</Label>
+                    <RadioGroup
+                        value={militaryService.substanceUseContributedIssues || ''}
+                        onValueChange={(value) => handleRadioChange('substanceUseContributedIssues', value)}
+                        className="flex space-x-4"
+                    >
+                        {renderRadioOption('substanceUseContributedIssues', 'yes', 'Yes')}
+                        {renderRadioOption('substanceUseContributedIssues', 'no', 'No')}
+                    </RadioGroup>
+                 </div>
+              </div>
+            )}
+
+            {/* Additional Info */}
+            <div className="space-y-2 pt-4 border-t mt-4">
+              <Label htmlFor="additionalMilitaryInfo">Additional Information – Military:</Label>
+              <p className="text-sm text-muted-foreground">Is there anything else about your military service or veteran status that you’d like to mention?</p>
+              <Textarea
+                id="additionalMilitaryInfo"
+                name="additionalMilitaryInfo"
+                value={militaryService.additionalMilitaryInfo || ''}
+                onChange={handleInputChange}
+              />
+            </div>
+
+          </div> // End conditional 'served' section
         )}
 
       </CardContent>
       <CardFooter className="flex justify-between">
-        <Button variant="outline" onClick={onBack} disabled={!onBack}>
-          Back
-        </Button>
-        <Button onClick={onNext} disabled={!onNext}>
-          Next
-        </Button>
+        <Button variant="outline" onClick={onBack}>Back</Button>
+        <Button onClick={onNext}>Next</Button>
       </CardFooter>
     </Card>
   );

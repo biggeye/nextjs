@@ -2,7 +2,8 @@
 "use client"
 
 import React from 'react';
-import { PatientData } from '../PatientIntakeFlow'; // Import PatientData
+import { DemographicsData } from '@/types/steps'; 
+import { PatientData } from '@/types/patient'; 
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -12,129 +13,102 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from '@/components/ui/textarea';
 
-// --- Types defined inline for now, consider moving to /types/steps.ts ---
-// TODO: Define the actual fields for DemographicsData
-// TODO: Move this type to /types/steps.ts or similar (Ref MEMORY[172bf59a])
-export interface DemographicsData { // Defined and Exported
-  // Currently a placeholder - define specific fields as needed
-  [key: string]: any;
-}
-
-interface DemographicsStepProps { // Defined props interface
-  demographics: DemographicsData; // Expect 'demographics' prop
-  updateData: (newData: Partial<PatientData>) => void; // Expect correct updateData signature
+interface DemographicsStepProps { 
+  demographics: DemographicsData; 
+  updateData: (field: keyof DemographicsData, value: any) => void; 
   onNext?: () => void;
   onBack?: () => void;
 }
-// --- End Types ---
 
 export const DemographicsStep: React.FC<DemographicsStepProps> = ({
-  demographics, // Destructure correct prop
+  demographics,
   updateData,
   onNext,
   onBack,
 }) => {
 
-  // Placeholder handler - adjust based on actual DemographicsData fields
-  const handleChange = (field: string, value: any) => {
-    updateData({ demographics: { ...demographics, [field]: value } });
+  const handleChange = (field: keyof DemographicsData, value: any) => {
+    updateData(field, value);
   };
 
-  // Example input handler (adapt as needed)
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    handleChange(e.target.name, e.target.value);
+    handleChange(e.target.name as keyof DemographicsData, e.target.value);
   };
 
-   // Example Radio handler (adapt as needed)
-  const handleRadioChange = (field: string, value: string) => {
+   const handleRadioChange = (field: keyof DemographicsData, value: string) => {
     handleChange(field, value);
   };
 
-  // Example Select handler (adapt as needed)
-  const handleSelectChange = (field: string, value: string) => {
-    handleChange(field, value);
-  };
-
-  // Example Checkbox handler (adapt as needed)
-  const handleCheckboxChange = (field: string, value: string, checked: boolean) => {
+  const handleCheckboxChange = (field: keyof DemographicsData, value: string, checked: boolean) => {
     const currentValues = (demographics[field] as string[]) || [];
     let newValues: string[];
     if (checked) {
-      newValues = [...new Set([...currentValues, value])];
+      newValues = [...new Set([...currentValues, value])]; 
     } else {
-      newValues = currentValues.filter((v) => v !== value);
+      newValues = currentValues.filter((v) => v !== value); 
     }
-    updateData({ demographics: { ...demographics, [field]: newValues } });
+
+    const typedNewValues = newValues as DemographicsData[typeof field];
+
+    // Update the main checkbox array field first
+    updateData(field, typedNewValues);
+
+    // If 'other' was unchecked for pronouns, clear the 'pronounsOther' field
+    if (field === 'pronouns' && value === 'other' && !checked) {
+      updateData('pronounsOther', ''); // Separate call
+    }
+
+    // If 'other' was unchecked for race/ethnicity, clear the 'raceEthnicityOther' field
+    if (field === 'raceEthnicity' && value === 'other' && !checked) {
+      updateData('raceEthnicityOther', ''); // Separate call
+    }
   };
 
-  // Helper to render radio options (adapt as needed)
-  const renderRadioOption = (groupName: string, value: string, label: string) => (
+  const renderRadioOption = (groupName: keyof DemographicsData, value: string, label: string) => (
     <div className="flex items-center space-x-2">
-      <RadioGroupItem value={value} id={`${groupName}-${value}`} />
-      <Label htmlFor={`${groupName}-${value}`}>{label}</Label>
+      <RadioGroupItem value={value} id={`${String(groupName)}-${value}`} />
+      <Label htmlFor={`${String(groupName)}-${value}`}>{label}</Label>
     </div>
   );
 
-  // Helper to render checkbox options (adapt as needed)
-  const renderCheckboxOption = (fieldName: string, value: string, label: string) => (
+  const renderCheckboxOption = (fieldName: keyof DemographicsData, value: string, label: string) => (
     <div className="flex items-center space-x-2">
       <Checkbox
-        id={`${fieldName}-${value}`}
+        id={`${String(fieldName)}-${value}`}
         checked={((demographics[fieldName] as string[]) || []).includes(value)}
         onCheckedChange={(checked) => handleCheckboxChange(fieldName, value, checked as boolean)}
       />
-      <Label htmlFor={`${fieldName}-${value}`}>{label}</Label>
+      <Label htmlFor={`${String(fieldName)}-${value}`}>{label}</Label>
     </div>
   );
-
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Demographic Information</CardTitle>
-        {/* Add description if needed */}
       </CardHeader>
       <CardContent className="pt-6">
         <div className="space-y-6">
-          {/* --- Personal Info --- */}
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input id="fullName" name="fullName" value={demographics.fullName || ""} onChange={handleInputChange} placeholder="Enter full name" />
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="dob">Date of Birth</Label>
-                <Input id="dob" name="dob" type="date" value={demographics.dob || ""} onChange={handleInputChange} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="age">Age</Label>
-                <Input id="age" name="age" type="number" value={demographics.age || ""} onChange={handleInputChange} placeholder="Age" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="gender">Gender</Label>
-                <Input id="gender" name="gender" value={demographics.gender || ""} onChange={handleInputChange} placeholder="Specify gender" />
-              </div>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="gender">Gender Identity</Label>
+            <Input id="gender" name="gender" value={demographics.gender || ""} onChange={handleInputChange} placeholder="Specify gender identity" />
           </div>
 
-          {/* --- Pronouns --- */}
           <div className="space-y-3 rounded-md border p-4">
-            <Label className="font-semibold">Pronouns</Label>
+            <Label className="font-semibold">Pronouns (Select all that apply)</Label>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-              {renderCheckboxOption('pronounsSheHer', 'She/Her', 'She/Her')}
-              {renderCheckboxOption('pronounsHeHim', 'He/Him', 'He/Him')}
-              {renderCheckboxOption('pronounsTheyThem', 'They/Them', 'They/Them')}
-              {renderCheckboxOption('pronounsOther', 'Other', 'Other')}
+              {renderCheckboxOption('pronouns', 'she_her', 'She/Her')}
+              {renderCheckboxOption('pronouns', 'he_him', 'He/Him')}
+              {renderCheckboxOption('pronouns', 'they_them', 'They/Them')}
+              {renderCheckboxOption('pronouns', 'other', 'Other (Specify)')}
             </div>
-            {demographics.pronounsOther && (
+            {((demographics.pronouns as string[]) || []).includes('other') && (
               <div className="mt-2 space-y-2">
-                <Label htmlFor="pronounsOtherSpecify">Other Pronouns:</Label>
+                <Label htmlFor="pronounsOther">Other Pronouns:</Label>
                 <Input
-                  id="pronounsOtherSpecify"
-                  name="pronounsOtherSpecify"
-                  value={demographics.pronounsOtherSpecify || ""}
+                  id="pronounsOther"
+                  name="pronounsOther"
+                  value={demographics.pronounsOther || ""}
                   onChange={handleInputChange}
                   placeholder="Please specify"
                 />
@@ -142,25 +116,24 @@ export const DemographicsStep: React.FC<DemographicsStepProps> = ({
             )}
           </div>
 
-          {/* --- Race/Ethnicity --- */}
           <div className="space-y-3 rounded-md border p-4">
-            <Label className="font-semibold">Race/Ethnicity (Check all that apply)</Label>
+            <Label className="font-semibold">Race/Ethnicity (Select all that apply)</Label>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-              {renderCheckboxOption('raceWhite', 'White', 'White')}
-              {renderCheckboxOption('raceBlack', 'Black/African American', 'Black/African American')}
-              {renderCheckboxOption('raceHispanic', 'Hispanic/Latino', 'Hispanic/Latino')}
-              {renderCheckboxOption('raceAsian', 'Asian', 'Asian')}
-              {renderCheckboxOption('raceNativeAmerican', 'Native American', 'Native American')}
-              {renderCheckboxOption('racePacificIslander', 'Pacific Islander', 'Pacific Islander')}
-              {renderCheckboxOption('raceOther', 'Other', 'Other')}
+              {renderCheckboxOption('raceEthnicity', 'white', 'White')}
+              {renderCheckboxOption('raceEthnicity', 'black_african_american', 'Black/African American')}
+              {renderCheckboxOption('raceEthnicity', 'hispanic_latino', 'Hispanic/Latino')}
+              {renderCheckboxOption('raceEthnicity', 'asian', 'Asian')}
+              {renderCheckboxOption('raceEthnicity', 'native_american', 'Native American')}
+              {renderCheckboxOption('raceEthnicity', 'pacific_islander', 'Pacific Islander')}
+              {renderCheckboxOption('raceEthnicity', 'other', 'Other (Specify)')}
             </div>
-            {demographics.raceOther && (
+            {((demographics.raceEthnicity as string[]) || []).includes('other') && (
               <div className="mt-2 space-y-2">
-                <Label htmlFor="raceOtherSpecify">Other Race/Ethnicity:</Label>
+                <Label htmlFor="raceEthnicityOther">Other Race/Ethnicity:</Label>
                 <Input
-                  id="raceOtherSpecify"
-                  name="raceOtherSpecify"
-                  value={demographics.raceOtherSpecify || ""}
+                  id="raceEthnicityOther"
+                  name="raceEthnicityOther"
+                  value={demographics.raceEthnicityOther || ""}
                   onChange={handleInputChange}
                   placeholder="Please specify"
                 />
@@ -169,11 +142,9 @@ export const DemographicsStep: React.FC<DemographicsStepProps> = ({
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">
-            {/* --- Marital Status --- */}
             <div className="space-y-3 rounded-md border p-4">
               <Label className="font-semibold">Marital/Relationship Status</Label>
               <RadioGroup
-                name="maritalStatus"
                 value={demographics.maritalStatus || ''}
                 onValueChange={(value) => handleRadioChange('maritalStatus', value)}
                 className="space-y-2"
@@ -187,126 +158,46 @@ export const DemographicsStep: React.FC<DemographicsStepProps> = ({
               </RadioGroup>
             </div>
 
-            {/* --- Employment Status --- */}
-            <div className="space-y-3 rounded-md border p-4">
-              <Label className="font-semibold">Employment Status</Label>
-              <RadioGroup
-                name="employmentStatus"
-                value={demographics.employmentStatus || ''}
-                onValueChange={(value) => handleRadioChange('employmentStatus', value)}
-                className="space-y-2"
-              >
-                {renderRadioOption('employmentStatus', 'employed', 'Employed')}
-                {renderRadioOption('employmentStatus', 'unemployed', 'Unemployed')}
-                {renderRadioOption('employmentStatus', 'student', 'Student')}
-                {renderRadioOption('employmentStatus', 'retired', 'Retired')}
-                {renderRadioOption('employmentStatus', 'disabled', 'Disabled')}
-              </RadioGroup>
-            </div>
-
-            {/* --- Living Situation --- */}
-            <div className="space-y-3 rounded-md border p-4">
-              <Label className="font-semibold">Living Situation</Label>
-              <RadioGroup
-                name="livingSituation"
-                value={demographics.livingSituation || ''}
-                onValueChange={(value) => handleRadioChange('livingSituation', value)}
-                className="space-y-2"
-              >
-                {renderRadioOption('livingSituation', 'own_rent', 'Own/Rent Home')}
-                {renderRadioOption('livingSituation', 'family_friends', 'With family/friends')}
-                {renderRadioOption('livingSituation', 'shelter', 'Shelter/Transitional')}
-                {renderRadioOption('livingSituation', 'homeless', 'Homeless/No stable housing')}
-              </RadioGroup>
-            </div>
-
-            {/* --- Veteran Status --- */}
-            <div className="space-y-3 rounded-md border p-4">
-              <Label className="font-semibold">Veteran/Military Service</Label>
-              <RadioGroup
-                name="veteranStatus"
-                value={demographics.veteranStatus || ''}
-                onValueChange={(value) => handleRadioChange('veteranStatus', value)}
-                className="space-y-2"
-              >
-                {renderRadioOption('veteranStatus', 'yes', 'Yes')}
-                {renderRadioOption('veteranStatus', 'no', 'No')}
-              </RadioGroup>
-              <p className="text-sm text-muted-foreground">
-                (If Yes, the Military Service section will follow later.)
-              </p>
-            </div>
-          </div>
-
-          {/* --- Language --- */}
-          <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="primaryLanguage">Primary Language</Label>
-              <Input id="primaryLanguage" name="primaryLanguage" value={demographics.primaryLanguage || ""} onChange={handleInputChange} placeholder="Specify primary language"/>
+              <Input id="primaryLanguage" name="primaryLanguage" value={demographics.primaryLanguage || ""} onChange={handleInputChange} placeholder="e.g., English, Spanish" />
             </div>
+
             <div className="space-y-3 rounded-md border p-4">
               <Label className="font-semibold">Interpreter Needed?</Label>
               <RadioGroup
-                name="interpreterNeeded"
                 value={demographics.interpreterNeeded || ''}
                 onValueChange={(value) => handleRadioChange('interpreterNeeded', value)}
-                className="flex space-x-4"
+                className="space-y-2"
               >
                 {renderRadioOption('interpreterNeeded', 'yes', 'Yes')}
                 {renderRadioOption('interpreterNeeded', 'no', 'No')}
               </RadioGroup>
             </div>
-          </div>
 
-          {/* --- Contact & Insurance --- */}
-          <div className="space-y-3 rounded-md border p-4">
-            <Label className="font-semibold">Preferred Contact Method</Label>
-            <RadioGroup
-              name="preferredContactMethod"
-              value={demographics.preferredContactMethod || ''}
-              onValueChange={(value) => handleRadioChange('preferredContactMethod', value)}
-              className="grid grid-cols-2 gap-4 md:grid-cols-4"
-            >
-              {renderRadioOption('preferredContactMethod', 'phone', 'Phone')}
-              {renderRadioOption('preferredContactMethod', 'email', 'Email')}
-              {renderRadioOption('preferredContactMethod', 'text', 'Text')}
-              {renderRadioOption('preferredContactMethod', 'mail', 'Mail')}
-            </RadioGroup>
+            <div className="space-y-3 rounded-md border p-4">
+              <Label className="font-semibold">Preferred Contact Method (Select all that apply)</Label>
+              <div className="grid grid-cols-2 gap-4">
+                 {renderCheckboxOption('preferredContactMethod', 'phone', 'Phone')}
+                 {renderCheckboxOption('preferredContactMethod', 'email', 'Email')}
+                 {renderCheckboxOption('preferredContactMethod', 'text', 'Text')}
+                 {renderCheckboxOption('preferredContactMethod', 'mail', 'Mail')}
+              </div>
+            </div>
+
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="emergencyContactName">Emergency Contact Name</Label>
-              <Input id="emergencyContactName" name="emergencyContactName" value={demographics.emergencyContactName || ""} onChange={handleInputChange} placeholder="Name" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="emergencyContactPhone">Emergency Contact Phone</Label>
-              <Input id="emergencyContactPhone" name="emergencyContactPhone" type="tel" value={demographics.emergencyContactPhone || ""} onChange={handleInputChange} placeholder="Phone Number" />
-            </div>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
+             <div className="space-y-2">
               <Label htmlFor="insuranceProvider">Insurance Provider</Label>
-              <Input id="insuranceProvider" name="insuranceProvider" value={demographics.insuranceProvider || ""} onChange={handleInputChange} placeholder="Insurance Company" />
+              <Input id="insuranceProvider" name="insuranceProvider" value={demographics.insuranceProvider || ""} onChange={handleInputChange} placeholder="Enter provider name" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="insurancePolicyNumber">Policy #</Label>
-              <Input id="insurancePolicyNumber" name="insurancePolicyNumber" value={demographics.insurancePolicyNumber || ""} onChange={handleInputChange} placeholder="Policy or Member ID" />
+              <Label htmlFor="insurancePolicyNumber">Insurance Policy Number</Label>
+              <Input id="insurancePolicyNumber" name="insurancePolicyNumber" value={demographics.insurancePolicyNumber || ""} onChange={handleInputChange} placeholder="Enter policy number" />
             </div>
           </div>
 
-          {/* --- Additional Notes --- */}
-          <div className="space-y-2">
-            <Label htmlFor="additionalNotes">Additional Demographic Notes</Label>
-            <Textarea
-              id="additionalNotes"
-              name="additionalNotes"
-              value={demographics.additionalNotes || ""}
-              onChange={handleInputChange}
-              placeholder="Enter any other relevant demographic information here..."
-            />
-          </div>
         </div>
       </CardContent>
       <CardFooter className="flex justify-between">
@@ -314,5 +205,5 @@ export const DemographicsStep: React.FC<DemographicsStepProps> = ({
         {onNext && <Button onClick={onNext}>Next</Button>}
       </CardFooter>
     </Card>
-  )
+  );
 };

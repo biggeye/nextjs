@@ -1,0 +1,887 @@
+[
+    {
+      "table_name": "chat_message_annotations",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "chat_message_annotations",
+      "column_name": "message_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "chat_message_annotations",
+      "column_name": "type",
+      "data_type": "text"
+    },
+    {
+      "table_name": "chat_message_annotations",
+      "column_name": "text",
+      "data_type": "text"
+    },
+    {
+      "table_name": "chat_message_annotations",
+      "column_name": "file_id",
+      "data_type": "text"
+    },
+    {
+      "table_name": "chat_message_annotations",
+      "column_name": "quote",
+      "data_type": "text"
+    },
+    {
+      "table_name": "chat_message_annotations",
+      "column_name": "start_index",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "chat_message_annotations",
+      "column_name": "end_index",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "chat_message_annotations",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "chat_messages",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "chat_messages",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "chat_messages",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "chat_messages",
+      "column_name": "role",
+      "data_type": "text"
+    },
+    {
+      "table_name": "chat_messages",
+      "column_name": "message_id",
+      "data_type": "text"
+    },
+    {
+      "table_name": "chat_messages",
+      "column_name": "user_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "chat_messages",
+      "column_name": "thread_id",
+      "data_type": "text"
+    },
+    {
+      "table_name": "chat_messages",
+      "column_name": "file_ids",
+      "data_type": "ARRAY"
+    },
+    {
+      "table_name": "chat_messages",
+      "column_name": "metadata",
+      "data_type": "jsonb"
+    },
+    {
+      "table_name": "chat_messages",
+      "column_name": "content",
+      "data_type": "jsonb"
+    },
+    {
+      "table_name": "chat_messages",
+      "column_name": "attachments",
+      "data_type": "ARRAY"
+    },
+    {
+      "table_name": "chat_threads",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "chat_threads",
+      "column_name": "user_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "chat_threads",
+      "column_name": "assistant_id",
+      "data_type": "text"
+    },
+    {
+      "table_name": "chat_threads",
+      "column_name": "status",
+      "data_type": "USER-DEFINED"
+    },
+    {
+      "table_name": "chat_threads",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "chat_threads",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "chat_threads",
+      "column_name": "metadata",
+      "data_type": "ARRAY"
+    },
+    {
+      "table_name": "chat_threads",
+      "column_name": "thread_id",
+      "data_type": "text"
+    },
+    {
+      "table_name": "chat_threads",
+      "column_name": "title",
+      "data_type": "text"
+    },
+    {
+      "table_name": "chat_threads",
+      "column_name": "last_message_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "chat_threads",
+      "column_name": "is_active",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "chat_threads",
+      "column_name": "tool_resources",
+      "data_type": "jsonb"
+    },
+    {
+      "table_name": "chat_threads",
+      "column_name": "last_run",
+      "data_type": "text"
+    },
+    {
+      "table_name": "chat_threads",
+      "column_name": "last_run_status",
+      "data_type": "text"
+    },
+    {
+      "table_name": "compliance_documents",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "compliance_documents",
+      "column_name": "framework_id",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "compliance_documents",
+      "column_name": "title",
+      "data_type": "text"
+    },
+    {
+      "table_name": "compliance_documents",
+      "column_name": "source",
+      "data_type": "text"
+    },
+    {
+      "table_name": "compliance_documents",
+      "column_name": "document_type",
+      "data_type": "text"
+    },
+    {
+      "table_name": "compliance_documents",
+      "column_name": "publish_date",
+      "data_type": "date"
+    },
+    {
+      "table_name": "compliance_documents",
+      "column_name": "is_active",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "compliance_documents",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "compliance_documents",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "compliance_embeddings",
+      "column_name": "id",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "compliance_embeddings",
+      "column_name": "document_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "compliance_embeddings",
+      "column_name": "framework_id",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "compliance_embeddings",
+      "column_name": "section_title",
+      "data_type": "text"
+    },
+    {
+      "table_name": "compliance_embeddings",
+      "column_name": "content",
+      "data_type": "text"
+    },
+    {
+      "table_name": "compliance_embeddings",
+      "column_name": "token_count",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "compliance_embeddings",
+      "column_name": "embedding",
+      "data_type": "USER-DEFINED"
+    },
+    {
+      "table_name": "compliance_embeddings",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "compliance_frameworks",
+      "column_name": "id",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "compliance_frameworks",
+      "column_name": "name",
+      "data_type": "text"
+    },
+    {
+      "table_name": "compliance_frameworks",
+      "column_name": "description",
+      "data_type": "text"
+    },
+    {
+      "table_name": "compliance_frameworks",
+      "column_name": "is_active",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "compliance_frameworks",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "document_embeddings",
+      "column_name": "id",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "document_embeddings",
+      "column_name": "document_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "document_embeddings",
+      "column_name": "chunk_index",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "document_embeddings",
+      "column_name": "content",
+      "data_type": "text"
+    },
+    {
+      "table_name": "document_embeddings",
+      "column_name": "token_count",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "document_embeddings",
+      "column_name": "embedding",
+      "data_type": "USER-DEFINED"
+    },
+    {
+      "table_name": "document_embeddings",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "documents",
+      "column_name": "document_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "documents",
+      "column_name": "user_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "documents",
+      "column_name": "facility_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "documents",
+      "column_name": "bucket",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "documents",
+      "column_name": "file_path",
+      "data_type": "text"
+    },
+    {
+      "table_name": "documents",
+      "column_name": "file_name",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "documents",
+      "column_name": "file_type",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "documents",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "documents",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "documents",
+      "column_name": "file_size",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "documents",
+      "column_name": "metadata",
+      "data_type": "ARRAY"
+    },
+    {
+      "table_name": "documents",
+      "column_name": "openai_file_id",
+      "data_type": "text"
+    },
+    {
+      "table_name": "documents",
+      "column_name": "processing_status",
+      "data_type": "text"
+    },
+    {
+      "table_name": "documents",
+      "column_name": "processing_error",
+      "data_type": "text"
+    },
+    {
+      "table_name": "facilities",
+      "column_name": "facility_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "facilities",
+      "column_name": "owner_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "facilities",
+      "column_name": "name",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "facilities",
+      "column_name": "address",
+      "data_type": "text"
+    },
+    {
+      "table_name": "facilities",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "facilities",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "facility_accreditations",
+      "column_name": "id",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "facility_accreditations",
+      "column_name": "facility_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "facility_accreditations",
+      "column_name": "organization_id",
+      "data_type": "text"
+    },
+    {
+      "table_name": "facility_accreditations",
+      "column_name": "organization_name",
+      "data_type": "text"
+    },
+    {
+      "table_name": "facility_accreditations",
+      "column_name": "receive_date",
+      "data_type": "date"
+    },
+    {
+      "table_name": "facility_accreditations",
+      "column_name": "expiration_date",
+      "data_type": "date"
+    },
+    {
+      "table_name": "facility_accreditations",
+      "column_name": "account_number",
+      "data_type": "text"
+    },
+    {
+      "table_name": "nods_page",
+      "column_name": "id",
+      "data_type": "bigint"
+    },
+    {
+      "table_name": "nods_page",
+      "column_name": "parent_page_id",
+      "data_type": "bigint"
+    },
+    {
+      "table_name": "nods_page",
+      "column_name": "path",
+      "data_type": "text"
+    },
+    {
+      "table_name": "nods_page",
+      "column_name": "checksum",
+      "data_type": "text"
+    },
+    {
+      "table_name": "nods_page",
+      "column_name": "meta",
+      "data_type": "jsonb"
+    },
+    {
+      "table_name": "nods_page",
+      "column_name": "type",
+      "data_type": "text"
+    },
+    {
+      "table_name": "nods_page",
+      "column_name": "source",
+      "data_type": "text"
+    },
+    {
+      "table_name": "nods_page_section",
+      "column_name": "id",
+      "data_type": "bigint"
+    },
+    {
+      "table_name": "nods_page_section",
+      "column_name": "page_id",
+      "data_type": "bigint"
+    },
+    {
+      "table_name": "nods_page_section",
+      "column_name": "content",
+      "data_type": "text"
+    },
+    {
+      "table_name": "nods_page_section",
+      "column_name": "token_count",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "nods_page_section",
+      "column_name": "embedding",
+      "data_type": "USER-DEFINED"
+    },
+    {
+      "table_name": "nods_page_section",
+      "column_name": "slug",
+      "data_type": "text"
+    },
+    {
+      "table_name": "nods_page_section",
+      "column_name": "heading",
+      "data_type": "text"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "user_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "first_name",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "last_name",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "is_owner",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "email",
+      "data_type": "text"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "username",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "about",
+      "data_type": "text"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "profile_image_url",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "title",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "phone",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "facility_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "street_address",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "city",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "state",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "postal_code",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "country",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "profiles",
+      "column_name": "preferred_language",
+      "data_type": "character varying"
+    },
+    {
+      "table_name": "thread_runs",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "thread_runs",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "thread_runs",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "thread_runs",
+      "column_name": "run_id",
+      "data_type": "text"
+    },
+    {
+      "table_name": "thread_runs",
+      "column_name": "thread_id",
+      "data_type": "text"
+    },
+    {
+      "table_name": "thread_runs",
+      "column_name": "assistant_id",
+      "data_type": "text"
+    },
+    {
+      "table_name": "thread_runs",
+      "column_name": "user_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "thread_runs",
+      "column_name": "status",
+      "data_type": "USER-DEFINED"
+    },
+    {
+      "table_name": "thread_runs",
+      "column_name": "started_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "thread_runs",
+      "column_name": "completed_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "thread_runs",
+      "column_name": "cancelled_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "thread_runs",
+      "column_name": "failed_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "thread_runs",
+      "column_name": "expires_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "thread_runs",
+      "column_name": "last_error",
+      "data_type": "jsonb"
+    },
+    {
+      "table_name": "thread_runs",
+      "column_name": "model",
+      "data_type": "text"
+    },
+    {
+      "table_name": "thread_runs",
+      "column_name": "instructions",
+      "data_type": "text"
+    },
+    {
+      "table_name": "thread_runs",
+      "column_name": "tools",
+      "data_type": "jsonb"
+    },
+    {
+      "table_name": "thread_runs",
+      "column_name": "metadata",
+      "data_type": "jsonb"
+    },
+    {
+      "table_name": "thread_runs",
+      "column_name": "required_action",
+      "data_type": "jsonb"
+    },
+    {
+      "table_name": "thread_runs",
+      "column_name": "prompt_tokens",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "thread_runs",
+      "column_name": "completion_tokens",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "thread_runs",
+      "column_name": "total_tokens",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "thread_runs",
+      "column_name": "temperature",
+      "data_type": "double precision"
+    },
+    {
+      "table_name": "thread_runs",
+      "column_name": "top_p",
+      "data_type": "double precision"
+    },
+    {
+      "table_name": "thread_runs",
+      "column_name": "max_prompt_tokens",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "thread_runs",
+      "column_name": "max_completion_tokens",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "thread_runs",
+      "column_name": "truncation_strategy",
+      "data_type": "jsonb"
+    },
+    {
+      "table_name": "thread_runs",
+      "column_name": "response_format",
+      "data_type": "text"
+    },
+    {
+      "table_name": "thread_runs",
+      "column_name": "tool_choice",
+      "data_type": "text"
+    },
+    {
+      "table_name": "thread_runs",
+      "column_name": "parallel_tool_calls",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "user_assistants",
+      "column_name": "id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "user_assistants",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "user_assistants",
+      "column_name": "user_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "user_assistants",
+      "column_name": "assistant_id",
+      "data_type": "text"
+    },
+    {
+      "table_name": "user_assistants",
+      "column_name": "name",
+      "data_type": "text"
+    },
+    {
+      "table_name": "user_assistants",
+      "column_name": "instructions",
+      "data_type": "text"
+    },
+    {
+      "table_name": "user_assistants",
+      "column_name": "description",
+      "data_type": "text"
+    },
+    {
+      "table_name": "user_assistants",
+      "column_name": "model",
+      "data_type": "text"
+    },
+    {
+      "table_name": "user_assistants",
+      "column_name": "tools",
+      "data_type": "ARRAY"
+    },
+    {
+      "table_name": "user_assistants",
+      "column_name": "file_ids",
+      "data_type": "ARRAY"
+    },
+    {
+      "table_name": "user_assistants",
+      "column_name": "metadata",
+      "data_type": "jsonb"
+    },
+    {
+      "table_name": "user_assistants",
+      "column_name": "is_active",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "user_assistants",
+      "column_name": "vector_store_id",
+      "data_type": "text"
+    },
+    {
+      "table_name": "user_assistants",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "user_compliance_preferences",
+      "column_name": "id",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "user_compliance_preferences",
+      "column_name": "user_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "user_compliance_preferences",
+      "column_name": "framework_id",
+      "data_type": "integer"
+    },
+    {
+      "table_name": "user_compliance_preferences",
+      "column_name": "is_active",
+      "data_type": "boolean"
+    },
+    {
+      "table_name": "user_compliance_preferences",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "user_compliance_preferences",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone"
+    },
+    {
+      "table_name": "user_facilities",
+      "column_name": "user_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "user_facilities",
+      "column_name": "facility_id",
+      "data_type": "uuid"
+    },
+    {
+      "table_name": "user_facilities",
+      "column_name": "role",
+      "data_type": "USER-DEFINED"
+    },
+    {
+      "table_name": "user_facilities",
+      "column_name": "assigned_at",
+      "data_type": "timestamp with time zone"
+    }
+  ]
